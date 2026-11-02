@@ -32,6 +32,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		A37B6CF6A45A29BE7F92AEDE /* controller.html in Resources */ = {isa = PBXBuildFile; fileRef = 162B97EC4867898295C64068 /* controller.html */; };
+		6DB32E1C2F725F95B8A504ED /* PhoneControllerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049F3AF3D042F5D55F190D3D /* PhoneControllerView.swift */; };
+		A148AD10E319878A70657BDF /* PhoneControllerServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E1A88EB967D1FC6992CF63 /* PhoneControllerServer.swift */; };
 		0FCC04D3E01F2316ACC420BC /* OriginalGBA.cikernel in Resources */ = {isa = PBXBuildFile; fileRef = CC9328D3339318FF5C281032 /* OriginalGBA.cikernel */; };
 		18FC614F90FE76140AAECE67 /* DeltaOperatorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBF2F877CA6072880A54F35 /* DeltaOperatorUtils.swift */; };
 		1FA4ABA79AB72914FE414A61 /* libPods-Delta.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DC866E433B3BA9AE18ABA1EC /* libPods-Delta.a */; };
@@ -623,6 +626,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		162B97EC4867898295C64068 /* controller.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = controller.html; sourceTree = "<group>"; };
+		049F3AF3D042F5D55F190D3D /* PhoneControllerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneControllerView.swift; sourceTree = "<group>"; };
+		42E1A88EB967D1FC6992CF63 /* PhoneControllerServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneControllerServer.swift; sourceTree = "<group>"; };
 		A4BE84063260E068A040FD61 /* Akira.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Akira.xcconfig; path = Akira.xcconfig; sourceTree = SOURCE_ROOT; };
 		0654CFCA3D2CB4D35CC99F89 /* OperatorSlotDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorSlotDataSource.swift; sourceTree = "<group>"; };
 		0B6FDC5A03AD5693BEFFE87C /* GamesViewController+Operator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GamesViewController+Operator.swift"; sourceTree = "<group>"; };
@@ -1051,6 +1057,9 @@
 		A7621629045AB59C2972B3D5 /* Phone Controller */ = {
 			isa = PBXGroup;
 			children = (
+				162B97EC4867898295C64068 /* controller.html */,
+				049F3AF3D042F5D55F190D3D /* PhoneControllerView.swift */,
+				42E1A88EB967D1FC6992CF63 /* PhoneControllerServer.swift */,
 				526A37E54C579F981241AD56 /* FakePhoneController.swift */,
 			);
 			path = "Phone Controller";
@@ -2421,6 +2430,7 @@
 				D8E178EAB0A69A0B600D72B3 /* OriginalGameBoy.cikernel in Resources */,
 				0FCC04D3E01F2316ACC420BC /* OriginalGBA.cikernel in Resources */,
 				BFFA71E21AAC406100EE9DD1 /* Main.storyboard in Resources */,
+				A37B6CF6A45A29BE7F92AEDE /* controller.html in Resources */,
 				D5B6F5D52D6FC23E0061C365 /* FollowUsFooterView.xib in Resources */,
 				D5AE76C62C2B7F3D0086471B /* Icons.xcassets in Resources */,
 				82F450AB2E6A1CD00097CE1C /* AppIcon.icon in Resources */,
@@ -2669,6 +2679,8 @@
 				D5E7E6F22D91F7A10057CD52 /* BecomePatronButton.swift in Sources */,
 				BFE4269E1D9C68E600DC913F /* SaveStatesStoryboardSegue.swift in Sources */,
 				BFFA71DD1AAC406100EE9DD1 /* AppDelegate.swift in Sources */,
+				6DB32E1C2F725F95B8A504ED /* PhoneControllerView.swift in Sources */,
+				A148AD10E319878A70657BDF /* PhoneControllerServer.swift in Sources */,
 				7AEE3CAB0E735860B2D4F2C8 /* FakePhoneController.swift in Sources */,
 				BF525EE81FF5F370004AA849 /* DeepLinkController.swift in Sources */,
 				BF59426B1E09BBD00051894B /* GridCollectionViewLayout.swift in Sources */,
