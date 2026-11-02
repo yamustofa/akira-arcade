@@ -30,6 +30,15 @@ final class FakePhoneController
     
     func startIfRequested()
     {
+        // Akira Arcade, stage 2 testing: start the phone controller server at launch, so the
+        // phone page can be tested without opening a game. Off unless launched with
+        // `-AkiraStartPhoneServer YES`; `-AkiraPhoneToken <token>` fixes the token.
+        if UserDefaults.standard.bool(forKey: "AkiraStartPhoneServer")
+        {
+            let token = UserDefaults.standard.string(forKey: "AkiraPhoneToken") ?? "akira-debug"
+            PhoneControllerServer.shared.start(token: token)
+        }
+        
         guard UserDefaults.standard.bool(forKey: "AkiraFakePhoneController"), self.controller == nil else { return }
         
         let controller = PhoneGameController(name: "Fake Phone")

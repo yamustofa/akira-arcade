@@ -87,13 +87,19 @@ extension PhoneControllerServer
     /// Starts both listeners with a fresh token. Call on the main thread.
     func start()
     {
+        self.start(token: PhoneControllerServer.makeToken())
+    }
+    
+    /// Starts both listeners with the given token. Debug builds use a fixed token for testing.
+    func start(token: String)
+    {
         switch self.state
         {
         case .starting, .running: return
         case .stopped, .failed: break
         }
         
-        self.token = PhoneControllerServer.makeToken()
+        self.token = token
         self.state = .starting
         
         do

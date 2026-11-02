@@ -76,6 +76,14 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
+            argument = "-AkiraStartPhoneServer YES"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-AkiraPhoneToken akira-debug"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-AkiraFakePhoneController YES"
             isEnabled = "NO">
          </CommandLineArgument>
