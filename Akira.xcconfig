@@ -1,0 +1,15 @@
+// Akira Arcade: signing for the Delta and Systems projects.
+//
+// Shared defaults live here. Put your own Apple team (and, if you like, your own
+// bundle ID) in Akira.local.xcconfig next to this file. That file is gitignored,
+// so personal signing never shows up as a change in git. Start from
+// Akira.local.xcconfig.example.
+//
+// Keep DEVELOPMENT_TEAM out of the targets' build settings in the .pbxproj files:
+// values set there override this file. If Xcode's Signing tab writes one back,
+// discard that change.
+
+DEVELOPMENT_TEAM =
+AKIRA_BUNDLE_ID = com.yamustofa.akiraarcade
+
+#include? "Akira.local.xcconfig"

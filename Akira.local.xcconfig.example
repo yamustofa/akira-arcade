@@ -1,0 +1,5 @@
+// Copy to Akira.local.xcconfig (gitignored) and fill in your own values.
+// Team ID: Xcode → Settings → Accounts → your Apple ID → Team, or developer.apple.com → Membership.
+
+DEVELOPMENT_TEAM = ABCDE12345
+// AKIRA_BUNDLE_ID = com.yourname.akiraarcade
