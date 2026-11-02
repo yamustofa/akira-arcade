@@ -72,6 +72,9 @@ final class PhoneControllerServer: ObservableObject
     private var slots: [ObjectIdentifier: Int] = [:]
     private var watchdogTimer: Timer?
     
+    /// Recent server events, newest last; shown at /status in Debug builds.
+    private var events: [String] = []
+    
     private let queue = DispatchQueue(label: "com.akira.arcade.PhoneControllerServer")
     
     private lazy var controllerPage: Data = {
@@ -84,6 +87,24 @@ final class PhoneControllerServer: ObservableObject
     
     private init()
     {
+    }
+}
+
+//MARK: - Diagnostics -
+private extension PhoneControllerServer
+{
+    /// Records an event in the log and, in Debug builds, in `events`. Call on the main thread.
+    func note(_ message: String)
+    {
+        Logger.phoneController.info("\(message, privacy: .public)")
+        
+        #if DEBUG
+        self.events.append(message)
+        if self.events.count > 40
+        {
+            self.events.removeFirst(self.events.count - 40)
+        }
+        #endif
     }
 }
 
@@ -177,7 +198,7 @@ extension PhoneControllerServer
     
     private func listenerStateDidChange(_ listenerState: NWListener.State)
     {
-        Logger.phoneController.info("Listener state: \(String(describing: listenerState), privacy: .public); server state: \(String(describing: self.state), privacy: .public)")
+        self.note("listener \(listenerState); server \(self.state)")
         
         switch listenerState
         {
@@ -231,7 +252,7 @@ private extension PhoneControllerServer
             #if DEBUG
             if method == "GET" && path == "/status"
             {
-                let status = DispatchQueue.main.sync { "state=\(self.state) players=\(self.players.count) sessions=\(self.sessions.count)" }
+                let status = DispatchQueue.main.sync { "state=\(self.state) players=\(self.players.count) sessions=\(self.sessions.count)\n" + self.events.joined(separator: "\n") }
                 let response = PhoneControllerServer.httpResponse(status: "200 OK", contentType: "text/plain; charset=utf-8", body: Data(status.utf8))
                 connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
                 return
@@ -282,7 +303,7 @@ private extension PhoneControllerServer
     
     func accept(_ connection: NWConnection)
     {
-        Logger.phoneController.info("WebSocket connection from \(String(describing: connection.endpoint), privacy: .public); server state: \(String(describing: self.state), privacy: .public)")
+        self.note("accept \(connection.endpoint); server \(self.state)")
         
         guard self.state == .running else {
             connection.cancel()
@@ -293,6 +314,10 @@ private extension PhoneControllerServer
         self.sessions[id] = Session(connection: connection)
         
         connection.stateUpdateHandler = { [weak self] state in
+            DispatchQueue.main.async {
+                self?.note("connection \(id.hashValue % 1000): \(state)")
+            }
+            
             switch state
             {
             case .failed, .cancelled:
@@ -315,8 +340,9 @@ private extension PhoneControllerServer
             DispatchQueue.main.async {
                 guard let self, self.sessions[id] != nil else { return }
                 
-                if error != nil
+                if let error
                 {
+                    self.note("receive error: \(error)")
                     self.endSession(id)
                     return
                 }
