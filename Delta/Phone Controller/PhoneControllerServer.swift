@@ -365,7 +365,10 @@ private extension PhoneControllerServer
         #if DEBUG
         if method == "GET" && path == "/status"
         {
-            let status = DispatchQueue.main.sync { "state=\(self.state) players=\(self.players.count) sessions=\(self.sessions.count)\n" + self.events.joined(separator: "\n") }
+            let status = DispatchQueue.main.sync { () -> String in
+                let masks = self.sessions.values.compactMap { $0.controller }.map { "\($0.name)=\($0.buttonMask)" }.sorted().joined(separator: " ")
+                return "state=\(self.state) players=\(self.players.count) sessions=\(self.sessions.count) masks: \(masks)\n" + self.events.joined(separator: "\n")
+            }
             self.respond(to: client, status: "200 OK", contentType: "text/plain; charset=utf-8", body: Data(status.utf8))
             return
         }
