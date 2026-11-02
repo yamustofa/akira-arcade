@@ -110,8 +110,20 @@ struct PhoneControllerView: View
             
             self.playerList
             
-            Button(NSLocalizedString("Turn Off", comment: ""), role: .destructive) {
-                self.server.stop()
+            Text(NSLocalizedString("Full screen on iPhone: Share → Add to Home Screen, then open the pad from its icon. On Android it goes full screen on the first touch.", comment: ""))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 360)
+            
+            HStack(spacing: 24) {
+                Button(NSLocalizedString("New Link", comment: "")) {
+                    self.server.makeNewLink()
+                }
+                
+                Button(NSLocalizedString("Turn Off", comment: ""), role: .destructive) {
+                    self.server.stop()
+                }
             }
         }
     }

@@ -14,11 +14,15 @@
 //  iPad → phone  { "t": "hello", "slot": 0 }          accepted: slot is the player index in the game
 //                                                      (0 is Player 1); a keyboard or gamepad that is
 //                                                      already connected can take the lower indexes
+//                                                      and "system": the console being played
+//                                                      ("nes", "snes", "n64", "gbc", "gba", "ds",
+//                                                      "genesis") or null, so the page shows its pad
+//  iPad → phone  { "t": "system", "system": "snes" }  the game changed to another console
 //  iPad → phone  { "t": "full" } / { "t": "denied" }  refused, then the iPad closes the socket
 //  phone → iPad  { "m": <mask> }                       the buttons held now, sent on every change and
 //                                                      every 250 ms while any button is held
-//  The token changes every time the server starts, so other devices on the same Wi-Fi can't
-//  join without scanning the QR code. If a phone goes quiet for 1 s while holding buttons, or
+//  The token is random and kept on the iPad, so a link saved to a phone's Home Screen keeps
+//  working; "New Link" replaces it. Other devices on the same Wi-Fi can't join without it. If a phone goes quiet for 1 s while holding buttons, or
 //  its socket closes, all its buttons are released so nothing stays stuck.
 //
 //  Threads: bytes are read and parsed on `queue`; everything else (state, sessions, the game
@@ -71,6 +75,16 @@ final class PhoneControllerServer: ObservableObject
     @Published private(set) var state: State = .stopped
     @Published private(set) var players: [Player] = []
     @Published private(set) var token: String = ""
+    
+    /// The game being played, set by GameViewController; phones switch their pad to match.
+    var gameType: GameType? {
+        didSet {
+            guard PhoneControllerServer.systemIdentifier(for: gameType) != PhoneControllerServer.systemIdentifier(for: oldValue) else { return }
+            self.broadcastSystem()
+        }
+    }
+    
+    private static let tokenDefaultsKey = "AkiraPhoneControllerToken"
 
     /// The address phones open, e.g. http://192.168.1.20:8765/?k=…; nil without a local network address.
     var controllerURL: URL? {
@@ -131,10 +145,36 @@ private extension PhoneControllerServer
 //MARK: - Starting and Stopping -
 extension PhoneControllerServer
 {
-    /// Starts the listener with a fresh token. Call on the main thread.
+    /// Starts the listener with this iPad's saved token (made once, kept until "New Link").
+    /// Call on the main thread.
     func start()
     {
-        self.start(token: PhoneControllerServer.makeToken())
+        let token: String
+        if let savedToken = UserDefaults.standard.string(forKey: PhoneControllerServer.tokenDefaultsKey), !savedToken.isEmpty
+        {
+            token = savedToken
+        }
+        else
+        {
+            token = PhoneControllerServer.makeToken()
+            UserDefaults.standard.set(token, forKey: PhoneControllerServer.tokenDefaultsKey)
+        }
+        
+        self.start(token: token)
+    }
+    
+    /// Replaces the saved token: phones on the old link are disconnected and must scan again.
+    func makeNewLink()
+    {
+        UserDefaults.standard.set(PhoneControllerServer.makeToken(), forKey: PhoneControllerServer.tokenDefaultsKey)
+        
+        let wasRunning = (self.state == .running || self.state == .starting)
+        self.stop()
+        
+        if wasRunning
+        {
+            self.start()
+        }
     }
 
     /// Starts the listener with the given token. Debug builds use a fixed token for testing.
@@ -374,6 +414,14 @@ private extension PhoneControllerServer
         }
         #endif
 
+        if method == "GET" && path == "/manifest.webmanifest"
+        {
+            // Lets Android's "Add to Home screen" open the pad full screen, in landscape.
+            let manifest = #"{"name":"Akira Arcade","short_name":"Akira","display":"fullscreen","orientation":"landscape","background_color":"#16161a","theme_color":"#16161a"}"#
+            self.respond(to: client, status: "200 OK", contentType: "application/manifest+json", body: Data(manifest.utf8))
+            return
+        }
+        
         if method == "GET" && (path == "/" || path == "/index.html")
         {
             self.respond(to: client, status: "200 OK", contentType: "text/html; charset=utf-8", body: self.controllerPage)
@@ -468,10 +516,39 @@ private extension PhoneControllerServer
         // when a keyboard or gamepad is connected too.
         let playerIndex = controller.playerIndex ?? slot
         self.note("phone \(slot + 1) joined as Player \(playerIndex + 1)")
-        self.send(["t": "hello", "slot": playerIndex], to: client)
+        self.send(["t": "hello", "slot": playerIndex, "system": self.systemValue], to: client)
         self.updatePlayers()
     }
 
+    /// The current console for JSON: its identifier, or NSNull when no game is open.
+    var systemValue: Any {
+        return PhoneControllerServer.systemIdentifier(for: self.gameType) ?? NSNull()
+    }
+    
+    func broadcastSystem()
+    {
+        for client in self.sessions.values where client.controller != nil
+        {
+            self.send(["t": "system", "system": self.systemValue], to: client)
+        }
+    }
+    
+    static func systemIdentifier(for gameType: GameType?) -> String?
+    {
+        guard let gameType, let system = System(gameType: gameType) else { return nil }
+        
+        switch system
+        {
+        case .nes: return "nes"
+        case .snes: return "snes"
+        case .n64: return "n64"
+        case .gbc: return "gbc"
+        case .gba: return "gba"
+        case .ds: return "ds"
+        case .genesis: return "genesis"
+        }
+    }
+    
     func refuse(_ client: Client, type: String)
     {
         self.send(["t": type], to: client)

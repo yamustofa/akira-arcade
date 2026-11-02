@@ -1,11 +1,15 @@
 <!doctype html>
 <!--
-  Akira Arcade phone controller (stage 2).
+  Akira Arcade phone controller.
   Served by PhoneControllerServer on the iPad (port 8765). Talks to it over a WebSocket at /ws:
     → { "t": "join", "k": "<token from ?k=>" }  then  { "m": <16-bit button mask> }
-    ← { "t": "hello", "slot": 0|1 }  or  { "t": "full" } / { "t": "denied" }
-  Mask bits: up 0, down 1, left 2, right 3, a 4, b 5, x 6, y 7, l1 8, r1 9,
-             start 10, select 11, l2 12, r2 13, menu 14.
+    ← { "t": "hello", "slot": <player index>, "system": "nes" | … | null }
+    ← { "t": "system", "system": "snes" }   the iPad switched to a game on another console
+    ← { "t": "full" } / { "t": "denied" }
+  Mask bits (DeltaCore's standard inputs): up 0, down 1, left 2, right 3, a 4, b 5, x 6, y 7,
+  l1 8, r1 9, start 10, select 11, l2 12, r2 13, menu 14. Each console's pad below sends the bits
+  that Delta's standard mapping turns into that console's buttons (e.g. Mega Drive A/B/C = x/a/b).
+  Pads are inspired by each console's original controller: layout and colours only, no logos.
   One file, no build step, no outside requests.
 -->
 <html lang="en">
@@ -15,83 +19,162 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Akira Arcade">
 <meta name="theme-color" content="#16161a">
+<link rel="manifest" href="/manifest.webmanifest">
 <title>Akira Arcade</title>
 <style>
   :root {
-    --bg: #16161a; --shell: #222228; --key: #33333b; --key-on: #4b4b56;
-    --ink: #f2efe8; --muted: #8d8b95; --p1: #2f6fd0; --p2: #d33b3b;
-    --a: #e0533d; --b: #e9a23b;
+    --bg: #16161a; --band: transparent; --ink: #f2efe8; --muted: #8d8b95;
+    --dpad: #33333b; --dpad-on: #4b4b56; --dpad-ink: #8d8b95;
+    --small: #33333b; --small-ink: #8d8b95; --shoulder: #33333b; --shoulder-ink: #c9c6cf;
+    --label: #8d8b95; --badge: #33333b;
   }
+  /* Console looks: colours and layout echo each original controller. */
+  body[data-system="nes"] {
+    --bg: #c9c7c4; --band: #2b2b2e; --ink: #2b2b2e; --muted: #5d5b58;
+    --dpad: #1c1c1e; --dpad-on: #3a3a3e; --dpad-ink: #6a6a70;
+    --small: #1c1c1e; --small-ink: #b8b6b2; --label: #c22a2a; --badge: #2b2b2e;
+  }
+  body[data-system="snes"] {
+    --bg: #c3c2c8; --band: transparent; --ink: #3a3946; --muted: #6a6878;
+    --dpad: #2d2c33; --dpad-on: #4a4955; --dpad-ink: #77767f;
+    --small: #8e8c99; --small-ink: #f1f0f5; --shoulder: #9d9ba8; --shoulder-ink: #3a3946;
+    --label: #6a6878; --badge: #5a5868;
+  }
+  body[data-system="gbc"] {
+    --bg: #d6d3cc; --ink: #2f3a5c; --muted: #6b6f80;
+    --dpad: #2a2a2e; --dpad-on: #47474d; --dpad-ink: #707078;
+    --small: #9b9893; --small-ink: #f6f4ef; --label: #2f3a5c; --badge: #2f3a5c;
+  }
+  body[data-system="gba"] {
+    --bg: #4b3f91; --ink: #ecebff; --muted: #b9b4e6;
+    --dpad: #262236; --dpad-on: #3d3856; --dpad-ink: #8c86b3;
+    --small: #2f2a47; --small-ink: #d9d6f2; --shoulder: #6f66b8; --shoulder-ink: #ecebff;
+    --label: #d9d6f2; --badge: #2f2a47;
+  }
+  body[data-system="ds"] {
+    --bg: #3a3b40; --ink: #ececf0; --muted: #a2a3ab;
+    --dpad: #1f2024; --dpad-on: #3a3b42; --dpad-ink: #8a8b94;
+    --small: #1f2024; --small-ink: #c9cad2; --shoulder: #5a5b62; --shoulder-ink: #ececf0;
+    --label: #a2a3ab; --badge: #1f2024;
+  }
+  body[data-system="genesis"] {
+    --bg: #1d1d20; --ink: #e8e8ec; --muted: #8a8a94;
+    --dpad: #2e2e33; --dpad-on: #48484f; --dpad-ink: #8a8a94;
+    --small: #2e2e33; --small-ink: #c9c9d2; --label: #8a8a94; --badge: #2e2e33;
+  }
+  body[data-system="n64"] {
+    --bg: #4a4a50; --ink: #ececf0; --muted: #b1b1b8;
+    --dpad: #2a2a2f; --dpad-on: #46464d; --dpad-ink: #8d8d96;
+    --small: #c23a32; --small-ink: #fff2ef; --shoulder: #66666e; --shoulder-ink: #ececf0;
+    --label: #b1b1b8; --badge: #2a2a2f;
+  }
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; height: 100%; background: var(--bg); color: var(--ink);
-    font: 600 15px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 700 15px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
     overflow: hidden; overscroll-behavior: none; touch-action: none;
     user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    transition: background-color .25s;
   }
+  button { font: inherit; border: 0; padding: 0; color: inherit; touch-action: none; }
+
   #bar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 2;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 3;
     display: flex; align-items: center; gap: 10px;
-    padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+    padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 6px max(16px, env(safe-area-inset-left));
+    pointer-events: none;
   }
-  #slot { padding: 4px 12px; border-radius: 999px; background: var(--key); font-weight: 800; letter-spacing: .04em; }
-  #slot[data-slot="0"] { background: var(--p1); }
-  #slot[data-slot="1"] { background: var(--p2); }
-  #status { color: var(--muted); font-size: 13px; flex: 1; }
-  #menu { width: 44px; height: 32px; border-radius: 10px; background: var(--key); font-size: 18px; }
+  #bar > * { pointer-events: auto; }
+  #slot { padding: 4px 12px; border-radius: 999px; background: var(--badge); color: #fff; font-weight: 800; letter-spacing: .04em; font-size: 14px; }
+  #slot[data-slot="0"] { background: #2f6fd0; }
+  #slot[data-slot="1"] { background: #d33b3b; }
+  #slot[data-slot="2"] { background: #2f9a52; }
+  #slot[data-slot="3"] { background: #c99a1e; }
+  #status { color: var(--muted); font-size: 12px; flex: 1; }
+  #menu { width: 44px; height: 30px; border-radius: 10px; background: var(--small); color: var(--small-ink); font-size: 17px; }
+
+  /* Middle band (NES-style dark stripe behind Select/Start; transparent elsewhere). */
+  #band { position: fixed; left: 39%; right: 39%; top: 0; bottom: 0; background: var(--band); opacity: .9; }
 
   #pad {
     position: fixed; inset: 0;
-    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-    padding: 56px max(24px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+    display: grid; grid-template-columns: 1fr minmax(120px, auto) 1fr; align-items: center;
+    padding: 52px max(24px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   }
-  #dpad {
-    justify-self: center; position: relative;
-    width: min(44vw, 72vh, 230px); aspect-ratio: 1;
-  }
-  #dpad .arm { position: absolute; background: var(--key); border-radius: 10px; }
+
+  #dpad { justify-self: center; position: relative; width: min(42vw, 66vh, 230px); aspect-ratio: 1; }
+  #dpad .arm { position: absolute; background: var(--dpad); border-radius: 8px; box-shadow: 0 5px 0 #0004; }
   #dpad .h { left: 0; right: 0; top: 33.3%; height: 33.4%; }
   #dpad .v { top: 0; bottom: 0; left: 33.3%; width: 33.4%; }
-  #dpad .dir { position: absolute; width: 33.4%; height: 33.4%; display: grid; place-items: center; color: var(--muted); font-size: 18px; border-radius: 10px; }
-  #dpad .dir.on { background: var(--key-on); color: var(--ink); }
+  #dpad .dir { position: absolute; width: 33.4%; height: 33.4%; display: grid; place-items: center; color: var(--dpad-ink); font-size: 16px; border-radius: 8px; }
+  #dpad .dir.on { background: var(--dpad-on); }
   #dpad [data-dir="up"] { left: 33.3%; top: 0; }
   #dpad [data-dir="down"] { left: 33.3%; bottom: 0; }
   #dpad [data-dir="left"] { left: 0; top: 33.3%; }
   #dpad [data-dir="right"] { right: 0; top: 33.3%; }
 
-  #middle { display: flex; gap: 14px; align-self: end; padding-bottom: 8px; }
-  .pill { min-width: 74px; height: 30px; border-radius: 999px; background: var(--key); color: var(--muted); font-size: 12px; letter-spacing: .08em; }
-
-  #face { justify-self: center; position: relative; width: min(44vw, 72vh, 230px); aspect-ratio: 1; }
-  .round {
-    position: absolute; width: 44%; aspect-ratio: 1; border-radius: 50%;
-    font-size: 26px; font-weight: 900; color: #1b1b1f; box-shadow: 0 6px 0 #0007;
+  #middle { display: flex; flex-direction: column; align-items: center; gap: 10px; align-self: end; padding-bottom: 6px; position: relative; z-index: 1; }
+  #smalls { display: flex; gap: 14px; }
+  .small {
+    min-width: 66px; height: 26px; border-radius: 999px; background: var(--small); color: var(--small-ink);
+    font-size: 11px; letter-spacing: .1em; box-shadow: 0 3px 0 #0004;
   }
-  #b { left: 4%; bottom: 10%; background: var(--b); }
-  #a { right: 4%; top: 10%; background: var(--a); }
+  body[data-system="gbc"] .small, body[data-system="gba"] .small, body[data-system="snes"] .small { transform: rotate(-24deg); }
+  #note { font-size: 11px; color: var(--muted); font-weight: 600; text-align: center; max-width: 30ch; }
 
-  button { font: inherit; border: 0; padding: 0; color: inherit; touch-action: none; }
-  button.on, .round.on { transform: translateY(4px); box-shadow: none; filter: brightness(1.15); }
-  .pill.on { background: var(--key-on); color: var(--ink); }
+  #face { justify-self: center; position: relative; width: min(42vw, 66vh, 230px); aspect-ratio: 1; }
+  .round {
+    position: absolute; border-radius: 50%; transform: translate(-50%, -50%);
+    display: grid; place-items: center; font-size: 22px; font-weight: 900;
+    box-shadow: 0 5px 0 #0005;
+  }
+  .round .tag { position: absolute; top: 104%; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--label); letter-spacing: .06em; }
 
-  #msg { position: fixed; inset: 0; z-index: 3; display: none; place-items: center; text-align: center; padding: 32px; background: var(--bg); }
+  .shoulder {
+    position: fixed; top: max(44px, calc(env(safe-area-inset-top) + 36px)); height: 34px; min-width: 96px; padding: 0 16px;
+    border-radius: 12px; background: var(--shoulder); color: var(--shoulder-ink); font-size: 14px; letter-spacing: .08em;
+    box-shadow: 0 4px 0 #0004; z-index: 2;
+  }
+  .shoulder.left { left: max(20px, env(safe-area-inset-left)); }
+  .shoulder.right { right: max(20px, env(safe-area-inset-right)); }
+  .shoulder.left.second { left: calc(max(20px, env(safe-area-inset-left)) + 108px); }
+
+  .on.round, .on.small, .on.shoulder { transform-origin: center; filter: brightness(1.18); box-shadow: none; }
+  .round.on { transform: translate(-50%, calc(-50% + 4px)); }
+  .small.on, .shoulder.on { translate: 0 3px; }
+
+  #msg { position: fixed; inset: 0; z-index: 5; display: none; place-items: center; text-align: center; padding: 32px; background: #16161a; color: #f2efe8; }
   #msg.show { display: grid; }
   #msg h1 { font-size: 24px; margin: 0 0 10px; }
-  #msg p { color: var(--muted); margin: 0 auto; max-width: 32ch; font-weight: 500; }
+  #msg p { color: #8d8b95; margin: 0 auto; max-width: 34ch; font-weight: 500; }
+
+  #hint {
+    position: fixed; z-index: 4; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    display: none; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px;
+    background: #16161aee; color: #f2efe8; font-size: 13px; font-weight: 600; max-width: min(92vw, 520px);
+    box-shadow: 0 8px 24px #0006;
+  }
+  #hint.show { display: flex; }
+  #hint button { width: 28px; height: 28px; border-radius: 50%; background: #33333b; color: #f2efe8; flex: none; }
 
   #rotate { display: none; }
   @media (orientation: portrait) {
-    #rotate { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; text-align: center; padding: 32px; background: var(--bg); color: var(--muted); }
+    #rotate { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; text-align: center; padding: 32px; background: #16161a; color: #8d8b95; }
   }
 </style>
 </head>
 <body>
+<div id="band"></div>
 <div id="bar">
   <span id="slot">Akira Arcade</span>
   <span id="status">Connecting…</span>
   <button id="menu" type="button" data-bit="menu" aria-label="Menu">☰</button>
 </div>
+
+<div id="shoulders"></div>
 
 <div id="pad">
   <div id="dpad" aria-label="Directional pad">
@@ -102,15 +185,13 @@
     <div class="dir" data-dir="right">▶</div>
   </div>
   <div id="middle">
-    <button class="pill" type="button" data-bit="select">SELECT</button>
-    <button class="pill" type="button" data-bit="start">START</button>
+    <div id="smalls"></div>
+    <div id="note"></div>
   </div>
-  <div id="face">
-    <button id="b" class="round" type="button" data-bit="b">B</button>
-    <button id="a" class="round" type="button" data-bit="a">A</button>
-  </div>
+  <div id="face"></div>
 </div>
 
+<div id="hint"><span id="hintText"></span><button id="hintClose" type="button" aria-label="Close">✕</button></div>
 <div id="msg"><div><h1 id="msgTitle"></h1><p id="msgBody"></p></div></div>
 <div id="rotate"><p>Turn your phone sideways to play.</p></div>
 
@@ -124,8 +205,81 @@
     l1: 1 << 8, r1: 1 << 9, start: 1 << 10, select: 1 << 11,
     l2: 1 << 12, r2: 1 << 13, menu: 1 << 14,
   };
-  const DIRS = BIT.up | BIT.down | BIT.left | BIT.right;
   const REPEAT_MS = 250;
+
+  // Face buttons: label, the standard bit Delta maps to that console button, centre (x, y in % of
+  // the face area), size (% of its width), colours. Shoulders sit in the top corners.
+  const SNES = { x: ["#2a4fa8", "#fff"], a: ["#c3272b", "#fff"], b: ["#e8b528", "#3a2a00"], y: ["#1e8c45", "#fff"] };
+  const LAYOUTS = {
+    nes: {
+      face: [
+        { label: "B", bit: "b", x: 26, y: 56, size: 36, bg: "#c8102e", ink: "#ffd9d9", tag: "B" },
+        { label: "A", bit: "a", x: 74, y: 56, size: 36, bg: "#c8102e", ink: "#ffd9d9", tag: "A" },
+      ],
+      shoulders: [], smalls: ["select", "start"],
+    },
+    snes: {
+      face: [
+        { label: "X", bit: "x", x: 50, y: 20, size: 29, bg: SNES.x[0], ink: SNES.x[1] },
+        { label: "A", bit: "a", x: 80, y: 50, size: 29, bg: SNES.a[0], ink: SNES.a[1] },
+        { label: "B", bit: "b", x: 50, y: 80, size: 29, bg: SNES.b[0], ink: SNES.b[1] },
+        { label: "Y", bit: "y", x: 20, y: 50, size: 29, bg: SNES.y[0], ink: SNES.y[1] },
+      ],
+      shoulders: [{ label: "L", bit: "l1", side: "left" }, { label: "R", bit: "r1", side: "right" }],
+      smalls: ["select", "start"],
+    },
+    gbc: {
+      face: [
+        { label: "B", bit: "b", x: 28, y: 64, size: 34, bg: "#9b2257", ink: "#ffe3ef", tag: "B" },
+        { label: "A", bit: "a", x: 72, y: 38, size: 34, bg: "#9b2257", ink: "#ffe3ef", tag: "A" },
+      ],
+      shoulders: [], smalls: ["select", "start"],
+    },
+    gba: {
+      face: [
+        { label: "B", bit: "b", x: 30, y: 62, size: 32, bg: "#d9d8e3", ink: "#2f2a47" },
+        { label: "A", bit: "a", x: 72, y: 40, size: 32, bg: "#d9d8e3", ink: "#2f2a47" },
+      ],
+      shoulders: [{ label: "L", bit: "l1", side: "left" }, { label: "R", bit: "r1", side: "right" }],
+      smalls: ["select", "start"],
+    },
+    ds: {
+      face: [
+        { label: "X", bit: "x", x: 50, y: 20, size: 28, bg: "#c9cad2", ink: "#1f2024" },
+        { label: "A", bit: "a", x: 80, y: 50, size: 28, bg: "#c9cad2", ink: "#1f2024" },
+        { label: "B", bit: "b", x: 50, y: 80, size: 28, bg: "#c9cad2", ink: "#1f2024" },
+        { label: "Y", bit: "y", x: 20, y: 50, size: 28, bg: "#c9cad2", ink: "#1f2024" },
+      ],
+      shoulders: [{ label: "L", bit: "l1", side: "left" }, { label: "R", bit: "r1", side: "right" }],
+      smalls: ["select", "start"],
+      note: "Touch the bottom screen on the iPad.",
+    },
+    genesis: {
+      // Delta's Mega Drive mapping: standard x → A, a → B, b → C.
+      face: [
+        { label: "A", bit: "x", x: 18, y: 66, size: 27, bg: "#3c3c42", ink: "#e8e8ec" },
+        { label: "B", bit: "a", x: 50, y: 54, size: 27, bg: "#3c3c42", ink: "#e8e8ec" },
+        { label: "C", bit: "b", x: 82, y: 42, size: 27, bg: "#3c3c42", ink: "#e8e8ec" },
+      ],
+      shoulders: [], smalls: ["start"],
+    },
+    n64: {
+      face: [
+        { label: "B", bit: "b", x: 30, y: 44, size: 30, bg: "#1f8a3a", ink: "#eaffef" },
+        { label: "A", bit: "a", x: 62, y: 70, size: 33, bg: "#2f5fbf", ink: "#eef3ff" },
+      ],
+      shoulders: [{ label: "L", bit: "l1", side: "left" }, { label: "Z", bit: "l2", side: "left", second: true }, { label: "R", bit: "r1", side: "right" }],
+      smalls: ["start"],
+      note: "Analog stick and C buttons are coming; the D-pad works now.",
+    },
+  };
+  LAYOUTS.default = {
+    face: [
+      { label: "B", bit: "b", x: 30, y: 62, size: 36, bg: "#e9a23b", ink: "#1b1b1f" },
+      { label: "A", bit: "a", x: 72, y: 38, size: 36, bg: "#e0533d", ink: "#1b1b1f" },
+    ],
+    shoulders: [], smalls: ["select", "start"],
+  };
 
   const $ = (id) => document.getElementById(id);
   const token = new URLSearchParams(location.search).get("k") || "";
@@ -135,9 +289,69 @@
   let lastSent = -1;
   let stopped = false;
   let retryDelay = 500;
+  let system = null;
 
-  // Each active pointer holds the bits it is pressing: a button's bit, or the D-pad's direction bits.
+  // Each active pointer holds the bits it is pressing.
   const pointers = new Map();
+
+  function render(nextSystem) {
+    system = LAYOUTS[nextSystem] ? nextSystem : null;
+    const layout = LAYOUTS[system || "default"];
+    document.body.dataset.system = system || "";
+
+    const face = $("face");
+    face.textContent = "";
+    for (const item of layout.face) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "round";
+      button.dataset.bit = item.bit;
+      button.textContent = item.label;
+      button.setAttribute("aria-label", item.label);
+      button.style.left = item.x + "%";
+      button.style.top = item.y + "%";
+      button.style.width = item.size + "%";
+      button.style.height = item.size + "%";
+      button.style.background = item.bg;
+      button.style.color = item.ink;
+      if (item.tag) {
+        button.textContent = "";
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = item.tag;
+        button.appendChild(tag);
+      }
+      face.appendChild(button);
+    }
+
+    const shoulders = $("shoulders");
+    shoulders.textContent = "";
+    for (const item of layout.shoulders) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "shoulder " + item.side + (item.second ? " second" : "");
+      button.dataset.bit = item.bit;
+      button.textContent = item.label;
+      shoulders.appendChild(button);
+    }
+
+    const smalls = $("smalls");
+    smalls.textContent = "";
+    for (const name of layout.smalls) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "small";
+      button.dataset.bit = name;
+      button.textContent = name.toUpperCase();
+      smalls.appendChild(button);
+    }
+
+    $("note").textContent = layout.note || "";
+
+    // Buttons the new pad doesn't have can't stay held.
+    pointers.clear();
+    flatten();
+  }
 
   function say(title, body) {
     $("msgTitle").textContent = title;
@@ -183,7 +397,19 @@
     return 0;
   }
 
+  // Combine every held pointer into one mask and send it if it changed.
+  function flatten() {
+    let next = 0;
+    for (const held of pointers.values()) next |= held.bits;
+    if (next === mask) return;
+    mask = next;
+    paint();
+    send(false);
+    if (navigator.vibrate && mask) navigator.vibrate(8);
+  }
+
   function onDown(event) {
+    goFullScreen();
     const button = event.target.closest("[data-bit]");
     const dpad = event.target.closest("#dpad");
     if (!button && !dpad) return;
@@ -207,17 +433,6 @@
     flatten();
   }
 
-  // Combine every held pointer into one mask and send it if it changed.
-  function flatten() {
-    let next = 0;
-    for (const held of pointers.values()) next |= held.bits;
-    if (next === mask) return;
-    mask = next;
-    paint();
-    send(false);
-    if (navigator.vibrate && mask) navigator.vibrate(8);
-  }
-
   function releaseAll() {
     pointers.clear();
     flatten();
@@ -234,6 +449,37 @@
 
   // While anything is held, repeat the mask so the iPad knows the phone is still there.
   setInterval(() => { if (mask) send(true); }, REPEAT_MS);
+
+  // Full screen. Browsers only allow it from a touch, so the first touch asks for it where it
+  // exists (Android). iPhone Safari has no full screen for pages: a launch from the Home Screen
+  // has no browser bars, so suggest that once.
+  const isStandalone = window.navigator.standalone === true || matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches;
+  const canFullScreen = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+
+  function goFullScreen() {
+    if (!canFullScreen || document.fullscreenElement) return;
+    document.documentElement.requestFullscreen({ navigationUI: "hide" })
+      .then(() => screen.orientation && screen.orientation.lock ? screen.orientation.lock("landscape") : null)
+      .catch(() => {});
+  }
+
+  function storage(get, value) {
+    try { return get ? localStorage.getItem("akiraHintDismissed") : localStorage.setItem("akiraHintDismissed", value); } catch (_) { return null; }
+  }
+
+  function showHint() {
+    if (isStandalone || canFullScreen || storage(true) === "1") return;
+    const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (!isIOS) return;
+    $("hintText").textContent = "Full screen: tap Share, then “Add to Home Screen”, and open Akira Arcade from its icon. Or tap aA → Hide Toolbar.";
+    $("hint").classList.add("show");
+  }
+  $("hintClose").addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    $("hint").classList.remove("show");
+    storage(false, "1");
+  });
 
   // Keep the screen on where the browser allows it (needs a secure context, so often not on plain http).
   async function keepAwake() {
@@ -262,7 +508,10 @@
         $("slot").dataset.slot = String(slot);
         setStatus("Connected");
         $("msg").classList.remove("show");
+        render(message.system);
         send(true);
+      } else if (message.t === "system") {
+        render(message.system);
       } else if (message.t === "full") {
         stopped = true;
         say("Already 2 players", "Two phones are playing. Ask one of them to close their page, then scan again.");
@@ -283,6 +532,9 @@
     };
   }
 
+  render(null);
+  showHint();
+
   if (!token) {
     say("Scan the QR code", "Open Phone Controller from the pause menu on the iPad and scan its QR code.");
   } else {
@@ -290,7 +542,7 @@
   }
 
   // For automated tests.
-  window.__akira = { get mask() { return mask; }, BIT };
+  window.__akira = { get mask() { return mask; }, get system() { return system; }, BIT, LAYOUTS };
 })();
 </script>
 </body>
