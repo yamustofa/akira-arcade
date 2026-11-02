@@ -417,7 +417,7 @@ private extension PhoneControllerServer
         if method == "GET" && path == "/manifest.webmanifest"
         {
             // Lets Android's "Add to Home screen" open the pad full screen, in landscape.
-            let manifest = #"{"name":"Akira Arcade","short_name":"Akira","display":"fullscreen","orientation":"landscape","background_color":"#16161a","theme_color":"#16161a"}"#
+            let manifest = ##"{"name":"Akira Arcade","short_name":"Akira","display":"fullscreen","orientation":"landscape","background_color":"#16161a","theme_color":"#16161a"}"##
             self.respond(to: client, status: "200 OK", contentType: "application/manifest+json", body: Data(manifest.utf8))
             return
         }
