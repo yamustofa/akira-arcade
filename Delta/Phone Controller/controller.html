@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
   Akira Arcade phone controller (stage 2).
-  Served by PhoneControllerServer on the iPad (HTTP :8765). Talks to it over WebSocket (:8766):
+  Served by PhoneControllerServer on the iPad (port 8765). Talks to it over a WebSocket at /ws:
     → { "t": "join", "k": "<token from ?k=>" }  then  { "m": <16-bit button mask> }
     ← { "t": "hello", "slot": 0|1 }  or  { "t": "full" } / { "t": "denied" }
   Mask bits: up 0, down 1, left 2, right 3, a 4, b 5, x 6, y 7, l1 8, r1 9,
@@ -125,7 +125,6 @@
     l2: 1 << 12, r2: 1 << 13, menu: 1 << 14,
   };
   const DIRS = BIT.up | BIT.down | BIT.left | BIT.right;
-  const WS_PORT = 8766;
   const REPEAT_MS = 250;
 
   const $ = (id) => document.getElementById(id);
@@ -246,7 +245,7 @@
   function connect() {
     if (stopped) return;
     setStatus("Connecting…");
-    ws = new WebSocket(`ws://${location.hostname}:${WS_PORT}/`);
+    ws = new WebSocket(`ws://${location.host}/ws`);
     lastSent = -1;
 
     ws.onopen = () => {

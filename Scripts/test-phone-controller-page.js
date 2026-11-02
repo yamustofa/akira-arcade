@@ -1,6 +1,6 @@
 // Tests the phone controller page (Delta/Phone Controller/controller.html) in a headless
-// phone-sized Chromium against a fake iPad: an HTTP server on :18765 and a WebSocket server
-// on :8766 that speaks the PhoneControllerServer protocol.
+// phone-sized Chromium against a fake iPad: an HTTP server on :18765 that serves the page at /
+// and speaks the PhoneControllerServer WebSocket protocol at /ws.
 //
 //   npm i --no-save ws playwright && npx playwright install chromium   (once)
 //   node Scripts/test-phone-controller-page.js
@@ -16,7 +16,7 @@ const ok = (cond, name) => { console.log((cond ? "PASS " : "FAIL ") + name); if 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const httpServer = http.createServer((req, res) => { res.writeHead(200, { "Content-Type": "text/html" }); res.end(PAGE); }).listen(18765);
-const wss = new WebSocketServer({ port: 8766 });
+const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 wss.on("connection", (ws) => {
   ws.on("message", (raw) => {
     const m = JSON.parse(raw); msgs.push(m);
