@@ -120,16 +120,23 @@ struct PhoneControllerView: View
         VStack(spacing: 10) {
             ForEach(0 ..< PhoneControllerServer.maximumPlayers, id: \.self) { slot in
                 HStack {
-                    Text("P\(slot + 1)")
-                        .font(.headline)
+                    Text(String(format: NSLocalizedString("Phone %d", comment: ""), slot + 1))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
-                        .frame(width: 44, height: 28)
+                        .frame(width: 84, height: 28)
                         .background(slot == 0 ? Color.blue : Color.red)
                         .clipShape(Capsule())
                     
-                    if self.server.players.contains(where: { $0.slot == slot })
+                    if let player = self.server.players.first(where: { $0.slot == slot })
                     {
-                        Text(NSLocalizedString("Connected", comment: ""))
+                        if let playerIndex = player.playerIndex
+                        {
+                            Text(String(format: NSLocalizedString("Connected · Player %d", comment: ""), playerIndex + 1))
+                        }
+                        else
+                        {
+                            Text(NSLocalizedString("Connected", comment: ""))
+                        }
                     }
                     else
                     {

@@ -11,7 +11,9 @@
 //
 //  Protocol (JSON text messages):
 //  phone → iPad  { "t": "join", "k": "<token>" }     first message; the token comes from the QR code
-//  iPad → phone  { "t": "hello", "slot": 0 }          accepted: slot 0 is P1, 1 is P2
+//  iPad → phone  { "t": "hello", "slot": 0 }          accepted: slot is the player index in the game
+//                                                      (0 is Player 1); a keyboard or gamepad that is
+//                                                      already connected can take the lower indexes
 //  iPad → phone  { "t": "full" } / { "t": "denied" }  refused, then the iPad closes the socket
 //  phone → iPad  { "m": <mask> }                       the buttons held now, sent on every change and
 //                                                      every 250 ms while any button is held
@@ -56,7 +58,13 @@ final class PhoneControllerServer: ObservableObject
     struct Player: Identifiable, Equatable
     {
         var id: ObjectIdentifier
+        
+        /// Which phone this is, 0 or 1 (at most `maximumPlayers` phones).
         var slot: Int
+        
+        /// The player this phone controls in the game, 0 for Player 1; nil if not assigned.
+        var playerIndex: Int?
+        
         var name: String
     }
 
@@ -447,24 +455,31 @@ private extension PhoneControllerServer
             return
         }
 
-        let controller = PhoneGameController(name: String(format: NSLocalizedString("Phone %@", comment: ""), "P\(slot + 1)"))
+        let controller = PhoneGameController(name: String(format: NSLocalizedString("Phone %@", comment: ""), "\(slot + 1)"))
         client.controller = controller
         client.slot = slot
 
         ExternalGameControllerManager.shared.connect(controller)
 
-        self.note("joined as P\(slot + 1)")
-        self.send(["t": "hello", "slot": slot], to: client)
+        // The phone shows the player it actually controls, which can differ from its slot
+        // when a keyboard or gamepad is connected too.
+        let playerIndex = controller.playerIndex ?? slot
+        self.note("phone \(slot + 1) joined as Player \(playerIndex + 1)")
+        self.send(["t": "hello", "slot": playerIndex], to: client)
         self.updatePlayers()
     }
 
     func refuse(_ client: Client, type: String)
     {
-        self.send(["t": type], to: client) { [weak self] in
+        self.send(["t": type], to: client)
+        
+        // Close cleanly: a close frame (1000), then end the session once it has gone out.
+        let closeFrame = PhoneControllerServer.makeFrame(opcode: 0x8, payload: [0x03, 0xE8])
+        client.connection.send(content: closeFrame, completion: .contentProcessed { [weak self] _ in
             DispatchQueue.main.async {
                 self?.endSession(ObjectIdentifier(client))
             }
-        }
+        })
     }
 
     func endSession(_ id: ObjectIdentifier)
@@ -512,7 +527,7 @@ private extension PhoneControllerServer
     {
         self.players = self.sessions.compactMap { id, client in
             guard let controller = client.controller, let slot = client.slot else { return nil }
-            return Player(id: id, slot: slot, name: controller.name)
+            return Player(id: id, slot: slot, playerIndex: controller.playerIndex, name: controller.name)
         }
         .sorted { $0.slot < $1.slot }
     }
