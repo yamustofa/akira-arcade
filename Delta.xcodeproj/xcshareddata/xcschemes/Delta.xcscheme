@@ -77,15 +77,15 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-AkiraShowPhoneControllerView YES"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-AkiraStartPhoneServer YES"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-AkiraPhoneToken akira-debug"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-AkiraFakePhoneController YES"
