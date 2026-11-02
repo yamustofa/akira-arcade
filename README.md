@@ -1,4 +1,30 @@
-# Delta
+# Akira Arcade
+
+> A fork of [Delta](https://github.com/rileytestut/Delta) by Riley Testut, made for **Akira**: a retro-computer dock for the iPad.
+
+Akira Arcade adds one thing to Delta: **phones on the same Wi-Fi become game controllers for the iPad**. Scan a QR code on the iPad and the phone's browser turns into a gamepad, with no app to install. It is a community project, built for fun. All credit for the emulator itself goes to Delta and its cores.
+
+- **Status:** stage 0 done (the fork builds and runs on an iPad with a free Apple ID). The phone controller is in progress.
+- **License:** AGPLv3, like Delta. If you share a build, share its source too.
+- **Games:** Akira Arcade ships no games. Load your own. For a quick, legal test, try MIT-licensed homebrew such as [Lunar Limit](https://github.com/retrobrews/nes-games).
+
+## Build it with a free Apple ID
+
+1. Install Xcode and sign in to your Apple ID in Xcode → Settings → Accounts.
+2. Install Git LFS: `brew install git-lfs && git lfs install`. The cores keep their controller skins in LFS, and without it their folders stay empty.
+3. Clone with submodules: `git clone --recursive https://github.com/yamustofa/akira-arcade.git`
+4. Copy `Akira.local.xcconfig.example` to `Akira.local.xcconfig` and set `DEVELOPMENT_TEAM` to your Team ID. Change `AKIRA_BUNDLE_ID` there too if `com.yamustofa.akiraarcade` is taken on your account.
+5. Run `Scripts/akira-sign-submodules.sh`. Some cores pin Delta's own team, and this points them at yours, locally only.
+6. Open `Delta.xcworkspace`, pick your iPad as the destination (not "Any iOS Device"), and press Run.
+7. On the iPad, trust the developer: Settings → General → VPN & Device Management.
+
+Apps installed with a free Apple ID expire after 7 days; press Run again to renew. Your games and saves stay.
+
+Don't pick a team in Xcode's Signing & Capabilities tab: it writes the team into the project file, which shows up as a git change. If it happens, discard that change.
+
+---
+
+# Delta (upstream README)
 
 > Delta is an all-in-one classic video game emulator for non-jailbroken iOS devices. 
 
