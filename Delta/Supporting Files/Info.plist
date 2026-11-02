@@ -210,7 +210,7 @@
 		<string>_altserver._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Delta uses the local network to communicate with AltServer, enable JIT, and connect to Epilogue Operator devices.</string>
+	<string>Delta uses the local network to communicate with AltServer, enable JIT, connect to Epilogue Operator devices, and let phones on the same Wi-Fi act as game controllers.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Delta uses your microphone to emulate the Nintendo DS microphone.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

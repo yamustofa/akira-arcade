@@ -15,6 +15,7 @@
 #if DEBUG
 
 import Foundation
+import SwiftUI
 import DeltaCore
 
 final class FakePhoneController
@@ -30,6 +31,30 @@ final class FakePhoneController
     
     func startIfRequested()
     {
+        // Akira Arcade, stage 2 testing: start the phone controller server at launch, so the
+        // phone page can be tested without opening a game. Off unless launched with
+        // `-AkiraStartPhoneServer YES`; `-AkiraPhoneToken <token>` fixes the token.
+        if UserDefaults.standard.bool(forKey: "AkiraStartPhoneServer")
+        {
+            let token = UserDefaults.standard.string(forKey: "AkiraPhoneToken") ?? "akira-debug"
+            PhoneControllerServer.shared.start(token: token)
+        }
+        
+        // `-AkiraShowPhoneControllerView YES` opens the QR screen right after launch, so it can be
+        // checked without opening a game and its pause menu.
+        if UserDefaults.standard.bool(forKey: "AkiraShowPhoneControllerView")
+        {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+                guard var presenter = scenes.flatMap({ $0.windows }).first(where: { $0.isKeyWindow })?.rootViewController else { return }
+                while let presented = presenter.presentedViewController
+                {
+                    presenter = presented
+                }
+                presenter.present(UIHostingController(rootView: PhoneControllerView()), animated: true)
+            }
+        }
+        
         guard UserDefaults.standard.bool(forKey: "AkiraFakePhoneController"), self.controller == nil else { return }
         
         let controller = PhoneGameController(name: "Fake Phone")

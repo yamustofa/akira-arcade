@@ -20,7 +20,7 @@ class PauseViewController: UIViewController, PauseInfoProviding
     }
     
     var pauseItems: [MenuItem] {
-        return [self.saveStateItem, self.loadStateItem, self.cheatCodesItem, self.fastForwardItem, self.sustainButtonsItem, self.screenshotItem, self.askLuItem, self.eventsItem, self.fullScreenItem].compactMap { $0 }
+        return [self.saveStateItem, self.loadStateItem, self.cheatCodesItem, self.fastForwardItem, self.sustainButtonsItem, self.screenshotItem, self.askLuItem, self.eventsItem, self.phoneControllerItem, self.fullScreenItem].compactMap { $0 }
     }
     
     var closeButtonTitle: String = NSLocalizedString("Main Menu", comment: "")
@@ -46,6 +46,7 @@ class PauseViewController: UIViewController, PauseInfoProviding
     var screenshotItem: MenuItem?
     var askLuItem: MenuItem?
     var eventsItem: MenuItem?
+    var phoneControllerItem: MenuItem?
     var fullScreenItem: MenuItem?
     
     /// PauseInfoProviding
@@ -248,6 +249,7 @@ private extension PauseViewController
         self.fastForwardItem = nil
         self.screenshotItem = nil
         self.eventsItem = nil
+        self.phoneControllerItem = nil
         
         guard let emulatorCore = self.emulatorCore else { return }
         
@@ -314,6 +316,16 @@ private extension PauseViewController
                 self.present(hostingController, animated: true)
             })
         }
+        // Akira Arcade: phones on the same Wi-Fi as game controllers.
+        let phoneControllerImage = UIImage(systemName: "iphone.gen3", withConfiguration: UIImage.SymbolConfiguration(pointSize: 35))?.withRenderingMode(.alwaysTemplate)
+        self.phoneControllerItem = MenuItem(text: NSLocalizedString("Phone Controller", comment: ""), image: phoneControllerImage, action: { [unowned self] item in
+            // Presenting a sheet doesn't trigger GridMenuViewController's automatic deselection.
+            item.isSelected = false
+            
+            let hostingController = UIHostingController(rootView: PhoneControllerView())
+            self.present(hostingController, animated: true)
+        })
+        
         // Add Lu menu item if enabled
         if ExperimentalFeatures.shared.Lu.isEnabled {
             self.askLuItem = self.configureLuMenuItem()
