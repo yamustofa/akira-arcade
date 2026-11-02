@@ -76,6 +76,10 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
+            argument = "-AkiraShowPhoneControllerView YES"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-AkiraStartPhoneServer YES"
             isEnabled = "YES">
          </CommandLineArgument>
