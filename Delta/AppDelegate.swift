@@ -45,6 +45,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate
         // Controllers
         ExternalGameControllerManager.shared.startMonitoring()
         
+        #if DEBUG
+        // Akira Arcade stage 1: fake phone controller, only with -AkiraFakePhoneController YES.
+        FakePhoneController.shared.startIfRequested()
+        #endif
+        
         // Audio
         if #available(iOS 27, *)
         {

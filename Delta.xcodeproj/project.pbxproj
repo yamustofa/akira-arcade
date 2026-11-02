@@ -186,6 +186,7 @@
 		BFF6452E1F7CC5060056533E /* GameControllerInputMappingTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF6B82A41F7CC2A300042BFB /* GameControllerInputMappingTransformer.swift */; };
 		BFFA4C091E8A24D600D87934 /* GameTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA4C081E8A24D600D87934 /* GameTableViewCell.swift */; };
 		BFFA71DD1AAC406100EE9DD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA71DC1AAC406100EE9DD1 /* AppDelegate.swift */; };
+		7AEE3CAB0E735860B2D4F2C8 /* FakePhoneController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526A37E54C579F981241AD56 /* FakePhoneController.swift */; };
 		BFFA71E21AAC406100EE9DD1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BFFA71E01AAC406100EE9DD1 /* Main.storyboard */; };
 		BFFC461E1D59823500AF2CC6 /* GamesPresentationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFC461B1D59823500AF2CC6 /* GamesPresentationController.swift */; };
 		BFFC461F1D59823500AF2CC6 /* GamesStoryboardSegue.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFC461C1D59823500AF2CC6 /* GamesStoryboardSegue.swift */; };
@@ -796,6 +797,7 @@
 		BFFA71D71AAC406100EE9DD1 /* Delta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Delta.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BFFA71DB1AAC406100EE9DD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BFFA71DC1AAC406100EE9DD1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		526A37E54C579F981241AD56 /* FakePhoneController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakePhoneController.swift; sourceTree = "<group>"; };
 		BFFA71E11AAC406100EE9DD1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		BFFC461B1D59823500AF2CC6 /* GamesPresentationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GamesPresentationController.swift; sourceTree = "<group>"; };
 		BFFC461C1D59823500AF2CC6 /* GamesStoryboardSegue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GamesStoryboardSegue.swift; sourceTree = "<group>"; };
@@ -1046,6 +1048,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A7621629045AB59C2972B3D5 /* Phone Controller */ = {
+			isa = PBXGroup;
+			children = (
+				526A37E54C579F981241AD56 /* FakePhoneController.swift */,
+			);
+			path = "Phone Controller";
+			sourceTree = "<group>";
+		};
 		11F7EF970F3EE7DAA5EE0DC8 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -1605,6 +1615,7 @@
 			children = (
 				D58013E82CC992560055F11C /* Delta.entitlements */,
 				BFFA71DC1AAC406100EE9DD1 /* AppDelegate.swift */,
+				A7621629045AB59C2972B3D5 /* Phone Controller */,
 				BFFA71E01AAC406100EE9DD1 /* Main.storyboard */,
 				D502F82129EF05F800ACCDA1 /* Scenes */,
 				BFFC46211D59848000AF2CC6 /* Launch */,
@@ -2658,6 +2669,7 @@
 				D5E7E6F22D91F7A10057CD52 /* BecomePatronButton.swift in Sources */,
 				BFE4269E1D9C68E600DC913F /* SaveStatesStoryboardSegue.swift in Sources */,
 				BFFA71DD1AAC406100EE9DD1 /* AppDelegate.swift in Sources */,
+				7AEE3CAB0E735860B2D4F2C8 /* FakePhoneController.swift in Sources */,
 				BF525EE81FF5F370004AA849 /* DeepLinkController.swift in Sources */,
 				BF59426B1E09BBD00051894B /* GridCollectionViewLayout.swift in Sources */,
 				BF6424851F5CBDC900D6AB44 /* UIView+ParentViewController.swift in Sources */,
