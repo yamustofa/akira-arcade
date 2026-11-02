@@ -3195,6 +3195,8 @@
 					"\"WebKit\"",
 					"-weak_framework",
 					"\"AuthenticationServices\"",
+					"-weak_framework",
+					"\"MarketplaceKit\"",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" -DDEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "$(AKIRA_BUNDLE_ID)";

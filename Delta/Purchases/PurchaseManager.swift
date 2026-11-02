@@ -119,6 +119,13 @@ class PurchaseManager
     @available(iOS 17.5, *) // iOS 17.5 is earliest version that supports reporting purchases via Apple's External Purchase Server API.
     func prepare() async
     {
+        if ProcessInfo.processInfo.isiOSAppOnMac
+        {
+            // Akira Arcade: MarketplaceKit doesn't exist on macOS (it is weak-linked so the
+            // app can launch there for testing), so skip store detection when running on a Mac.
+            return
+        }
+        
         #if APP_STORE
         
         // Override value for APP_STORE builds.
