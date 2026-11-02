@@ -23,6 +23,12 @@ import Foundation
 import Network
 import Security
 import DeltaCore
+import OSLog
+
+extension Logger
+{
+    static let phoneController = Logger(subsystem: "com.akira.arcade", category: "PhoneController")
+}
 
 final class PhoneControllerServer: ObservableObject
 {
@@ -171,6 +177,8 @@ extension PhoneControllerServer
     
     private func listenerStateDidChange(_ listenerState: NWListener.State)
     {
+        Logger.phoneController.info("Listener state: \(String(describing: listenerState), privacy: .public); server state: \(String(describing: self.state), privacy: .public)")
+        
         switch listenerState
         {
         case .ready:
@@ -220,6 +228,16 @@ private extension PhoneControllerServer
             let path = parts.count > 1 ? String(parts[1]) : ""
             
             let response: Data
+            #if DEBUG
+            if method == "GET" && path == "/status"
+            {
+                let status = DispatchQueue.main.sync { "state=\(self.state) players=\(self.players.count) sessions=\(self.sessions.count)" }
+                let response = PhoneControllerServer.httpResponse(status: "200 OK", contentType: "text/plain; charset=utf-8", body: Data(status.utf8))
+                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+                return
+            }
+            #endif
+            
             if method == "GET" && (path == "/" || path.hasPrefix("/?") || path == "/index.html")
             {
                 response = PhoneControllerServer.httpResponse(status: "200 OK", contentType: "text/html; charset=utf-8", body: self.controllerPage)
@@ -264,6 +282,8 @@ private extension PhoneControllerServer
     
     func accept(_ connection: NWConnection)
     {
+        Logger.phoneController.info("WebSocket connection from \(String(describing: connection.endpoint), privacy: .public); server state: \(String(describing: self.state), privacy: .public)")
+        
         guard self.state == .running else {
             connection.cancel()
             return
