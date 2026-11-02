@@ -16,10 +16,16 @@ if [ -z "$team" ]; then
 fi
 
 count=0
-for f in $(find Cores External -name project.pbxproj -path '*.xcodeproj/*' 2>/dev/null); do
-  if grep -qE '(DEVELOPMENT_TEAM|DevelopmentTeam) = [A-Z0-9]{10};' "$f"; then
-    perl -pi -e "s/(DEVELOPMENT_TEAM|DevelopmentTeam) = [A-Z0-9]{10};/\$1 = $team;/g" "$f"
-    count=$((count + 1))
-  fi
-done
-echo "Signed $count core project(s) with team $team."
+# Only the projects the workspaces use: each core's own .xcodeproj and Harmony's
+# backends. Example and template projects deeper inside dependencies are left alone.
+find Cores External -maxdepth 5 -name project.pbxproj -path '*.xcodeproj/*' \
+  -not -path '*/Carthage/*' -not -path '*/dependencies/*' -not -path '*/Example*' -print |
+{
+  while IFS= read -r f; do
+    if grep -qE '(DEVELOPMENT_TEAM|DevelopmentTeam) = [A-Z0-9]{10};' "$f"; then
+      perl -pi -e "s/(DEVELOPMENT_TEAM|DevelopmentTeam) = [A-Z0-9]{10};/\$1 = $team;/g" "$f"
+      count=$((count + 1))
+    fi
+  done
+  echo "Signed $count core project(s) with team $team."
+}
