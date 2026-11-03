@@ -73,7 +73,7 @@
     --label: #b1b1b8; --badge: #2a2a2f;
   }
 
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   html, body {
     margin: 0; height: 100%; background: var(--bg); color: var(--ink);
     font: 700 15px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -317,6 +317,34 @@
   // Each active pointer holds the bits it is pressing.
   const pointers = new Map();
 
+  // Touch zones, like a real pad: a thumb anywhere on the left part of the screen works the
+  // D-pad (or stick), anywhere on the right part presses the nearest face button, and sliding
+  // the thumb moves between buttons. Only shoulders, Select/Start and the menu are exact targets.
+  const LEFT_ZONE = 0.42, RIGHT_ZONE = 0.58;   // fractions of the screen width
+  function zoneFor(event) {
+    const button = event.target.closest("#shoulders [data-bit], #smalls [data-bit], #menu");
+    if (button) return { kind: "button", bit: button.dataset.bit };
+    if (event.target.closest("#hint, #msg")) return null;
+    const x = event.clientX / window.innerWidth;
+    if (x <= LEFT_ZONE) return { kind: hasStick() ? "stick" : "dpad" };
+    if (x >= RIGHT_ZONE) return { kind: "face" };
+    return null;
+  }
+
+  // The nearest face button to the thumb. Between two buttons (not well inside either), both:
+  // that's how a thumb rolls over B and A at once to run and jump.
+  function faceBits(x, y) {
+    const buttons = [...document.querySelectorAll("#face [data-bit]")].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { bit: BIT[el.dataset.bit], radius: r.width / 2, distance: Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) };
+    }).sort((a, b) => a.distance - b.distance);
+    const [first, second] = buttons;
+    if (!first || first.distance > first.radius * 3) return 0;
+    let bits = first.bit;
+    if (second && first.distance > first.radius * 0.7 && second.distance < first.distance * 1.3 && second.distance < second.radius * 1.7) bits |= second.bit;
+    return bits;
+  }
+
   function render(nextSystem) {
     system = LAYOUTS[nextSystem] ? nextSystem : null;
     const layout = LAYOUTS[system || "default"];
@@ -452,7 +480,7 @@
     let next = 0, nextX = 0, nextY = 0;
     for (const held of pointers.values()) {
       next |= held.bits;
-      if (held.stick) { nextX = held.x; nextY = held.y; }
+      if (held.kind === "stick") { nextX = held.x; nextY = held.y; }
     }
     if (next === mask && nextX === stickX && nextY === stickY) return;
     const pressedNew = (next & ~mask) !== 0;
@@ -467,34 +495,32 @@
 
   function onDown(event) {
     goFullScreen();
-    const button = event.target.closest("[data-bit]");
-    const dpad = event.target.closest("#dpad");
-    const stick = event.target.closest("#stick");
-    if (!button && !dpad && !stick) return;
+    const zone = zoneFor(event);
+    if (!zone) return;
     event.preventDefault();
     try { event.target.setPointerCapture(event.pointerId); } catch (_) {}
-    if (stick) {
-      const value = stickValues(event.clientX, event.clientY);
-      pointers.set(event.pointerId, { stick: true, bits: 0, x: value.x, y: value.y });
-    } else if (dpad) {
-      pointers.set(event.pointerId, { dpad: true, bits: dpadBits(event.clientX, event.clientY) });
-    } else {
-      pointers.set(event.pointerId, { bits: BIT[button.dataset.bit] });
-    }
+    const held = { kind: zone.kind, bits: zone.kind === "button" ? BIT[zone.bit] : 0, x: 0, y: 0 };
+    pointers.set(event.pointerId, held);
+    track(held, event);
     flatten();
+  }
+
+  // Follows a held thumb: D-pad direction, stick position or nearest face button.
+  function track(held, event) {
+    if (held.kind === "dpad") held.bits = dpadBits(event.clientX, event.clientY);
+    else if (held.kind === "face") held.bits = faceBits(event.clientX, event.clientY);
+    else if (held.kind === "stick") {
+      const value = stickValues(event.clientX, event.clientY);
+      held.x = value.x;
+      held.y = value.y;
+    }
   }
 
   function onMove(event) {
     const held = pointers.get(event.pointerId);
-    if (!held || !(held.dpad || held.stick)) return;
+    if (!held || held.kind === "button") return;
     event.preventDefault();
-    if (held.stick) {
-      const value = stickValues(event.clientX, event.clientY);
-      held.x = value.x;
-      held.y = value.y;
-    } else {
-      held.bits = dpadBits(event.clientX, event.clientY);
-    }
+    track(held, event);
     flatten();
   }
 
@@ -513,6 +539,12 @@
   document.addEventListener("pointermove", onMove, { passive: false });
   document.addEventListener("pointerup", onUp, { passive: false });
   document.addEventListener("pointercancel", onUp, { passive: false });
+  // iPhone Safari: stop long-press text selection, the magnifier and double-tap zoom. Taps on the
+  // hint's close button still arrive as pointer events.
+  for (const type of ["touchstart", "touchmove"]) {
+    document.addEventListener(type, (event) => { if (event.cancelable) event.preventDefault(); }, { passive: false });
+  }
+  document.addEventListener("selectstart", (event) => event.preventDefault());
   document.addEventListener("contextmenu", (event) => event.preventDefault());
   document.addEventListener("dblclick", (event) => event.preventDefault());
   document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });

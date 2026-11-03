@@ -85,6 +85,30 @@ wss.on("connection", (ws) => {
     ok(masks().includes(want), btn + " sends " + want);
   }
 
+  // Forgiving touch: off-centre and between buttons, and sliding from one to the next (NES pad).
+  msgs.length = 0;
+  let ba = await box("[data-bit=a]"), bb = await box("[data-bit=b]");
+  await page.mouse.move(ba.x + ba.width * 1.15, ba.y + ba.height * 1.1); await page.mouse.down(); await sleep(40);
+  ok(masks().at(-1) === 16, "a touch just outside A still presses A (" + masks().at(-1) + ")");
+  await page.mouse.up(); await sleep(40);
+  msgs.length = 0;
+  const midX = (ba.x + ba.width / 2 + bb.x + bb.width / 2) / 2, midY = ba.y + ba.height / 2;
+  await page.mouse.move(midX, midY); await page.mouse.down(); await sleep(40);
+  ok(masks().at(-1) === 48, "a thumb between B and A presses both (" + masks().at(-1) + ")");
+  await page.mouse.up(); await sleep(40);
+  msgs.length = 0;
+  await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await page.mouse.down(); await sleep(40);
+  await page.mouse.move(ba.x + ba.width / 2, ba.y + ba.height / 2, { steps: 8 }); await sleep(40);
+  const slide = [...new Set(masks())];
+  ok(slide[0] === 32 && slide.at(-1) === 16, "sliding from B to A moves the press: " + JSON.stringify(slide));
+  await page.mouse.up(); await sleep(40);
+  msgs.length = 0;
+  const dpBox = await box("#dpad");
+  await page.mouse.move(dpBox.x + dpBox.width * 1.1, dpBox.y + dpBox.height / 2); await page.mouse.down(); await sleep(40);
+  ok(masks().at(-1) === 8, "a touch right of the D-pad still presses right (" + masks().at(-1) + ")");
+  await page.mouse.up(); await sleep(40);
+  ok(await page.evaluate(() => getComputedStyle(document.querySelector("#status")).webkitUserSelect || getComputedStyle(document.querySelector("#status")).userSelect) === "none", "text can't be selected");
+
   // Server goes away → page reconnects and re-joins.
   msgs.length = 0;
   for (const c of wss.clients) c.terminate();
