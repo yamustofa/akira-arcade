@@ -115,6 +115,9 @@ class GameViewController: DeltaCore.GameViewController
             self.updateControllers()
             self.updateAudio()
             
+            // Akira Arcade: phone controllers switch their pad to this game's console.
+            PhoneControllerServer.shared.gameType = self.game?.type
+            
             self.presentedGyroAlert = false
             
             self.startTrackingAchievements()
