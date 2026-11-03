@@ -91,7 +91,7 @@ wss.on("connection", (ws) => {
   await sleep(1500);
   ok(msgs.some((m) => m.t === "join"), "reconnects and re-joins after the socket drops");
 
-  for (const [k, text] of [["full", "Already 2 players"], ["bad", "expired"], ["", "Scan the QR code"]]) {
+  for (const [k, text] of [["full", "All 4 places are taken"], ["bad", "expired"], ["", "Scan the QR code"]]) {
     const p2 = await ctx.newPage();
     await p2.goto("http://localhost:18765/" + (k ? "?k=" + k : "")); await sleep(400);
     ok((await p2.textContent("#msg")).includes(text) && await p2.locator("#msg.show").count() === 1, `token "${k}" shows "${text}"`);
@@ -115,9 +115,52 @@ wss.on("connection", (ws) => {
   ok(masks().includes(32), "Mega Drive C sends standard b (32)");
   await page.screenshot({ path: __dirname + "/pad-genesis.png" });
   push("n64"); await sleep(150);
-  ok((await shoulderLabels()) === "L:l1 Z:l2 R:r1", "N64 pad: L Z R");
+  ok((await shoulderLabels()) === "Z:l2 L:l1 R:r1", "N64 pad: Z L R (" + (await shoulderLabels()) + ")");
+  ok(await page.locator("#stick").isVisible() && !(await page.locator("#dpad").isVisible()), "N64 shows the thumb stick instead of the D-pad");
+  await page.screenshot({ path: __dirname + "/pad-n64.png" });
+  msgs.length = 0;
+  b = await box("#stick");
+  const sx = b.x + b.width / 2, sy = b.y + b.height / 2, sr = b.width * 0.36;
+  await page.mouse.move(sx + sr * 0.5, sy); await page.mouse.down(); await sleep(40);
+  await page.mouse.move(sx + sr * 2, sy, { steps: 3 }); await sleep(40);
+  let last = msgs.filter((m) => "x" in m).at(-1);
+  ok(last && last.x === 1 && last.y === 0, "stick pushed past the ring right: x 1, y 0 (" + JSON.stringify(last) + ")");
+  await page.mouse.move(sx, sy - sr * 0.5, { steps: 4 }); await sleep(40);
+  last = msgs.filter((m) => "x" in m).at(-1);
+  ok(last && last.x === 0 && last.y === 0.5, "stick half up: x 0, y 0.5 (" + JSON.stringify(last) + ")");
+  await sleep(600);
+  ok(msgs.filter((m) => m.y === 0.5).length >= 3, "held stick repeats");
+  await page.mouse.up(); await sleep(60);
+  last = msgs.filter((m) => "x" in m).at(-1);
+  ok(last && last.x === 0 && last.y === 0 && last.m === 0, "letting go centres the stick");
+  msgs.length = 0;
+  for (const [bit, want] of [["cUp", 1 << 15], ["cDown", 1 << 16], ["cLeft", 1 << 17], ["cRight", 1 << 18], ["l2", 1 << 12]]) {
+    b = await box(`[data-bit=${bit}]`); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await sleep(30); await page.mouse.up(); await sleep(30);
+    ok(masks().includes(want), `N64 ${bit} sends ${want}`);
+  }
+  // Stick and a C button with two thumbs at once.
+  msgs.length = 0;
+  await page.evaluate(() => {
+    const at = (el, dx) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2 + dx, y: r.y + r.height / 2 }; };
+    const fire = (el, type, id, dx) => { const p = at(el, dx); el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, clientX: p.x, clientY: p.y })); };
+    fire(document.querySelector("#stick"), "pointerdown", 21, -1000);
+    fire(document.querySelector("[data-bit=a]"), "pointerdown", 22, 0);
+  });
+  await sleep(50);
+  last = msgs.at(-1);
+  ok(last && last.m === 16 && last.x === -1, "stick left + A together (" + JSON.stringify(last) + ")");
+  await page.evaluate(() => window.dispatchEvent(new Event("blur"))); await sleep(50);
   push("gba"); await sleep(150);
   ok((await faceLabels()) === "B:b A:a" && (await shoulderLabels()) === "L:l1 R:r1", "GBA pad: B A + L R");
+  msgs.length = 0;
+  b = await box("[data-bit=a]"); await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await sleep(30); await page.mouse.up(); await sleep(30);
+  ok(masks().includes(16) && !msgs.some((m) => "x" in m), "pads without a stick send no axes");
+  // Shoulders are big and don't cover the D-pad or face buttons.
+  const overlap = (a, c) => !(a.x + a.width <= c.x || c.x + c.width <= a.x || a.y + a.height <= c.y || c.y + c.height <= a.y);
+  const lb = await box("[data-bit=l1]"), dp = await box("#dpad"), fb = await box("#face");
+  ok(lb.width >= 150 && lb.height >= 44, "GBA L is big (" + Math.round(lb.width) + "×" + Math.round(lb.height) + ")");
+  ok(!overlap(lb, dp) && !overlap(await box("[data-bit=r1]"), fb), "shoulders don't cover the D-pad or face buttons");
+  await page.screenshot({ path: __dirname + "/pad-gba.png" });
   push("gbc"); await sleep(150);
   await page.screenshot({ path: __dirname + "/pad-gbc.png" });
   // A pad switch while a button is held releases it.

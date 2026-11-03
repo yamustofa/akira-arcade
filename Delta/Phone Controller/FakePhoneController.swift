@@ -74,7 +74,7 @@ final class FakePhoneController
             
             tick += 1
             
-            let mask: UInt16
+            let mask: UInt32
             switch tick
             {
             case 4, 8: mask = PhoneGameController.Input.start.bit

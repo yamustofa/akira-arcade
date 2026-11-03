@@ -4,9 +4,20 @@
 
 Akira Arcade adds one thing to Delta: **phones on the same Wi-Fi become game controllers for the iPad**. Scan a QR code on the iPad and the phone's browser turns into a gamepad, with no app to install. It is a community project, built for fun. All credit for the emulator itself goes to Delta and its cores.
 
-- **Status:** stage 0 done (the fork builds and runs on an iPad with a free Apple ID). The phone controller is in progress.
+- **Status:** the phone controller works for NES, SNES, Game Boy / Color / Advance, DS, Mega Drive and N64 (thumb stick and C buttons included), with up to 4 phones.
 - **License:** AGPLv3, like Delta. If you share a build, share its source too.
 - **Games:** Akira Arcade ships no games. Load your own. For a quick, legal test, try MIT-licensed homebrew such as [Lunar Limit](https://github.com/retrobrews/nes-games).
+
+## Play with phones
+
+1. Start a game on the iPad, open the pause menu and tap **Phone Controller**.
+2. Phone not on the iPad's Wi-Fi yet? Type the Wi-Fi password once on the iPad and the phone scans the **Join Wi-Fi** QR code. The password stays in the iPad's Keychain.
+3. Each phone scans **Open the pad**. Its browser shows a pad styled after the console being played, and it changes when the iPad switches to a game on another console.
+4. Hold the phone sideways. For full screen on iPhone, add the page to the Home Screen and open it from there (or aA → Hide Toolbar); Android goes full screen on the first touch.
+
+Up to 4 phones can play. The link keeps working, so a phone that saved it to its Home Screen can rejoin later; **New Link** on the iPad replaces it and disconnects everyone. Phones and iPad talk only over the local network: no accounts, no internet, nothing leaves the room.
+
+How it works: [`Delta/Phone Controller/`](Delta/Phone%20Controller/) (the server on the iPad and the pad page) and `PhoneGameController` in the DeltaCore fork. Manual test steps: [`docs/akira/phone-controller-test.md`](docs/akira/phone-controller-test.md).
 
 ## Build it with a free Apple ID
 

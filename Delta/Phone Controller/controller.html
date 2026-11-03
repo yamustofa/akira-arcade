@@ -2,12 +2,14 @@
 <!--
   Akira Arcade phone controller.
   Served by PhoneControllerServer on the iPad (port 8765). Talks to it over a WebSocket at /ws:
-    → { "t": "join", "k": "<token from ?k=>" }  then  { "m": <16-bit button mask> }
+    → { "t": "join", "k": "<token from ?k=>" }  then  { "m": <button mask>, "x": <-1…1>, "y": <-1…1> }
     ← { "t": "hello", "slot": <player index>, "system": "nes" | … | null }
     ← { "t": "system", "system": "snes" }   the iPad switched to a game on another console
     ← { "t": "full" } / { "t": "denied" }
   Mask bits (DeltaCore's standard inputs): up 0, down 1, left 2, right 3, a 4, b 5, x 6, y 7,
-  l1 8, r1 9, start 10, select 11, l2 12, r2 13, menu 14. Each console's pad below sends the bits
+  l1 8, r1 9, start 10, select 11, l2 12, r2 13, menu 14, and the right stick directions
+  up 15, down 16, left 17, right 18 (N64's C buttons). x and y are the thumb stick (up and right
+  positive), sent only by pads that have one (N64). Each console's pad below sends the bits
   that Delta's standard mapping turns into that console's buttons (e.g. Mega Drive A/B/C = x/a/b).
   Pads are inspired by each console's original controller: layout and colours only, no logos.
   One file, no build step, no outside requests.
@@ -133,14 +135,26 @@
   }
   .round .tag { position: absolute; top: 104%; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--label); letter-spacing: .06em; }
 
+  /* Shoulders are wide and tall so a thumb finds them without looking (racing games hold them). */
   .shoulder {
-    position: fixed; top: max(44px, calc(env(safe-area-inset-top) + 36px)); height: 34px; min-width: 96px; padding: 0 16px;
-    border-radius: 12px; background: var(--shoulder); color: var(--shoulder-ink); font-size: 14px; letter-spacing: .08em;
+    position: fixed; top: max(44px, calc(env(safe-area-inset-top) + 36px)); height: clamp(44px, 15vh, 64px); width: 27vw; max-width: 240px;
+    border-radius: 14px; background: var(--shoulder); color: var(--shoulder-ink); font-size: 16px; letter-spacing: .08em;
     box-shadow: 0 4px 0 #0004; z-index: 2;
   }
-  .shoulder.left { left: max(20px, env(safe-area-inset-left)); }
-  .shoulder.right { right: max(20px, env(safe-area-inset-right)); }
-  .shoulder.left.second { left: calc(max(20px, env(safe-area-inset-left)) + 108px); }
+  .shoulder.left { left: max(16px, env(safe-area-inset-left)); }
+  .shoulder.right { right: max(16px, env(safe-area-inset-right)); }
+  .shoulder.second { width: 16vw; max-width: 140px; }
+  .shoulder.left.second { left: calc(max(16px, env(safe-area-inset-left)) + min(27vw, 240px) + 10px); }
+  .shoulder.right.second { right: calc(max(16px, env(safe-area-inset-right)) + min(27vw, 240px) + 10px); }
+  body.has-shoulders #pad { padding-top: calc(max(44px, env(safe-area-inset-top) + 36px) + clamp(44px, 15vh, 64px) + 10px); }
+  body.has-shoulders #dpad, body.has-shoulders #face, body.has-shoulders #stick { width: min(40vw, calc(100vh - 170px), 230px); }
+
+  /* Thumb stick (N64): replaces the D-pad; the knob follows the thumb inside the ring. */
+  #stick { justify-self: center; position: relative; width: min(42vw, 66vh, 230px); aspect-ratio: 1; display: none; border-radius: 50%; background: var(--dpad); box-shadow: inset 0 0 0 6px #0003, 0 5px 0 #0004; }
+  #knob { position: absolute; left: 50%; top: 50%; width: 42%; aspect-ratio: 1; border-radius: 50%; background: var(--dpad-on); transform: translate(-50%, -50%); box-shadow: 0 4px 0 #0005; pointer-events: none; }
+  body.has-stick #stick { display: block; }
+  body.has-stick #dpad { display: none; }
+  .round.c { font-size: 15px; box-shadow: 0 3px 0 #0005; }
 
   .on.round, .on.small, .on.shoulder { transform-origin: center; filter: brightness(1.18); box-shadow: none; }
   .round.on { transform: translate(-50%, calc(-50% + 4px)); }
@@ -177,6 +191,7 @@
 <div id="shoulders"></div>
 
 <div id="pad">
+  <div id="stick" aria-label="Thumb stick"><div id="knob"></div></div>
   <div id="dpad" aria-label="Directional pad">
     <div class="arm h"></div><div class="arm v"></div>
     <div class="dir" data-dir="up">▲</div>
@@ -204,7 +219,9 @@
     a: 1 << 4, b: 1 << 5, x: 1 << 6, y: 1 << 7,
     l1: 1 << 8, r1: 1 << 9, start: 1 << 10, select: 1 << 11,
     l2: 1 << 12, r2: 1 << 13, menu: 1 << 14,
+    cUp: 1 << 15, cDown: 1 << 16, cLeft: 1 << 17, cRight: 1 << 18,
   };
+  const STICK_STEP = 0.05;   // stick values are rounded to this, so tiny jitters aren't sent
   const REPEAT_MS = 250;
 
   // Face buttons: label, the standard bit Delta maps to that console button, centre (x, y in % of
@@ -264,13 +281,18 @@
       shoulders: [], smalls: ["start"],
     },
     n64: {
+      // Delta's N64 mapping: the right stick directions are the C buttons, l2 is Z.
+      stick: true,
       face: [
-        { label: "B", bit: "b", x: 30, y: 44, size: 30, bg: "#1f8a3a", ink: "#eaffef" },
-        { label: "A", bit: "a", x: 62, y: 70, size: 33, bg: "#2f5fbf", ink: "#eef3ff" },
+        { label: "B", bit: "b", x: 22, y: 58, size: 27, bg: "#1f8a3a", ink: "#eaffef" },
+        { label: "A", bit: "a", x: 46, y: 80, size: 30, bg: "#2f5fbf", ink: "#eef3ff" },
+        { label: "▲", bit: "cUp", x: 76, y: 14, size: 18, bg: "#e7b521", ink: "#3a2c00", c: true },
+        { label: "◀", bit: "cLeft", x: 58, y: 34, size: 18, bg: "#e7b521", ink: "#3a2c00", c: true },
+        { label: "▶", bit: "cRight", x: 94, y: 34, size: 18, bg: "#e7b521", ink: "#3a2c00", c: true },
+        { label: "▼", bit: "cDown", x: 76, y: 54, size: 18, bg: "#e7b521", ink: "#3a2c00", c: true },
       ],
-      shoulders: [{ label: "L", bit: "l1", side: "left" }, { label: "Z", bit: "l2", side: "left", second: true }, { label: "R", bit: "r1", side: "right" }],
+      shoulders: [{ label: "Z", bit: "l2", side: "left" }, { label: "L", bit: "l1", side: "left", second: true }, { label: "R", bit: "r1", side: "right" }],
       smalls: ["start"],
-      note: "Analog stick and C buttons are coming; the D-pad works now.",
     },
   };
   LAYOUTS.default = {
@@ -286,7 +308,8 @@
 
   let ws = null;
   let mask = 0;
-  let lastSent = -1;
+  let stickX = 0, stickY = 0;
+  let lastSent = "";
   let stopped = false;
   let retryDelay = 500;
   let system = null;
@@ -304,7 +327,7 @@
     for (const item of layout.face) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "round";
+      button.className = item.c ? "round c" : "round";
       button.dataset.bit = item.bit;
       button.textContent = item.label;
       button.setAttribute("aria-label", item.label);
@@ -347,6 +370,8 @@
     }
 
     $("note").textContent = layout.note || "";
+    document.body.classList.toggle("has-shoulders", layout.shoulders.length > 0);
+    document.body.classList.toggle("has-stick", !!layout.stick);
 
     // Buttons the new pad doesn't have can't stay held.
     pointers.clear();
@@ -361,12 +386,18 @@
 
   function setStatus(text) { $("status").textContent = text; }
 
+  function hasStick() { return !!(system && LAYOUTS[system].stick); }
+
   function send(force) {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    if (!force && mask === lastSent) return;
-    lastSent = mask;
-    ws.send(JSON.stringify({ m: mask }));
+    const message = hasStick() ? { m: mask, x: stickX, y: stickY } : { m: mask };
+    const text = JSON.stringify(message);
+    if (!force && text === lastSent) return;
+    lastSent = text;
+    ws.send(text);
   }
+
+  function isHolding() { return mask !== 0 || stickX !== 0 || stickY !== 0; }
 
   function paint() {
     for (const el of document.querySelectorAll("[data-bit]")) {
@@ -397,33 +428,73 @@
     return 0;
   }
 
-  // Combine every held pointer into one mask and send it if it changed.
+  // Thumb stick: the offset from the ring's centre, as -1…1 per axis (up is positive),
+  // limited to the ring and rounded to STICK_STEP.
+  function stickValues(x, y) {
+    const r = $("stick").getBoundingClientRect();
+    const radius = r.width * 0.36;
+    let dx = (x - (r.left + r.width / 2)) / radius;
+    let dy = -(y - (r.top + r.height / 2)) / radius;
+    const length = Math.hypot(dx, dy);
+    if (length > 1) { dx /= length; dy /= length; }
+    const round = (v) => Math.round(v / STICK_STEP) * STICK_STEP;
+    return { x: round(dx) || 0, y: round(dy) || 0 };
+  }
+
+  function paintStick() {
+    // The knob is 42% of the ring and travels 36% of it, i.e. 36/42 of its own width.
+    const travel = (36 / 42) * 100;
+    $("knob").style.transform = `translate(calc(-50% + ${stickX * travel}%), calc(-50% + ${-stickY * travel}%))`;
+  }
+
+  // Combine every held pointer into one mask (and the stick's position) and send what changed.
   function flatten() {
-    let next = 0;
-    for (const held of pointers.values()) next |= held.bits;
-    if (next === mask) return;
+    let next = 0, nextX = 0, nextY = 0;
+    for (const held of pointers.values()) {
+      next |= held.bits;
+      if (held.stick) { nextX = held.x; nextY = held.y; }
+    }
+    if (next === mask && nextX === stickX && nextY === stickY) return;
+    const pressedNew = (next & ~mask) !== 0;
     mask = next;
+    stickX = nextX;
+    stickY = nextY;
     paint();
+    paintStick();
     send(false);
-    if (navigator.vibrate && mask) navigator.vibrate(8);
+    if (navigator.vibrate && pressedNew) navigator.vibrate(8);
   }
 
   function onDown(event) {
     goFullScreen();
     const button = event.target.closest("[data-bit]");
     const dpad = event.target.closest("#dpad");
-    if (!button && !dpad) return;
+    const stick = event.target.closest("#stick");
+    if (!button && !dpad && !stick) return;
     event.preventDefault();
     try { event.target.setPointerCapture(event.pointerId); } catch (_) {}
-    pointers.set(event.pointerId, dpad ? { dpad: true, bits: dpadBits(event.clientX, event.clientY) } : { dpad: false, bits: BIT[button.dataset.bit] });
+    if (stick) {
+      const value = stickValues(event.clientX, event.clientY);
+      pointers.set(event.pointerId, { stick: true, bits: 0, x: value.x, y: value.y });
+    } else if (dpad) {
+      pointers.set(event.pointerId, { dpad: true, bits: dpadBits(event.clientX, event.clientY) });
+    } else {
+      pointers.set(event.pointerId, { bits: BIT[button.dataset.bit] });
+    }
     flatten();
   }
 
   function onMove(event) {
     const held = pointers.get(event.pointerId);
-    if (!held || !held.dpad) return;
+    if (!held || !(held.dpad || held.stick)) return;
     event.preventDefault();
-    held.bits = dpadBits(event.clientX, event.clientY);
+    if (held.stick) {
+      const value = stickValues(event.clientX, event.clientY);
+      held.x = value.x;
+      held.y = value.y;
+    } else {
+      held.bits = dpadBits(event.clientX, event.clientY);
+    }
     flatten();
   }
 
@@ -447,8 +518,8 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });
   window.addEventListener("blur", releaseAll);
 
-  // While anything is held, repeat the mask so the iPad knows the phone is still there.
-  setInterval(() => { if (mask) send(true); }, REPEAT_MS);
+  // While anything is held, repeat it so the iPad knows the phone is still there.
+  setInterval(() => { if (isHolding()) send(true); }, REPEAT_MS);
 
   // Full screen. Browsers only allow it from a touch, so the first touch asks for it where it
   // exists (Android). iPhone Safari has no full screen for pages: a launch from the Home Screen
@@ -492,7 +563,7 @@
     if (stopped) return;
     setStatus("Connecting…");
     ws = new WebSocket(`ws://${location.host}/ws`);
-    lastSent = -1;
+    lastSent = "";
 
     ws.onopen = () => {
       retryDelay = 500;
@@ -514,7 +585,7 @@
         render(message.system);
       } else if (message.t === "full") {
         stopped = true;
-        say("Already 2 players", "Two phones are playing. Ask one of them to close their page, then scan again.");
+        say("All 4 places are taken", "Four phones are playing. Ask one of them to close their page, then scan again.");
       } else if (message.t === "denied") {
         stopped = true;
         say("This link has expired", "Open Phone Controller on the iPad and scan the new QR code.");
@@ -542,7 +613,7 @@
   }
 
   // For automated tests.
-  window.__akira = { get mask() { return mask; }, get system() { return system; }, BIT, LAYOUTS };
+  window.__akira = { get mask() { return mask; }, get stick() { return { x: stickX, y: stickY }; }, get system() { return system; }, BIT, LAYOUTS };
 })();
 </script>
 </body>
