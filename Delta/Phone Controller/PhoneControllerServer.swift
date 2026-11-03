@@ -19,11 +19,14 @@
 //                                                      "genesis") or null, so the page shows its pad
 //  iPad → phone  { "t": "system", "system": "snes" }  the game changed to another console
 //  iPad → phone  { "t": "full" } / { "t": "denied" }  refused, then the iPad closes the socket
-//  phone → iPad  { "m": <mask> }                       the buttons held now, sent on every change and
-//                                                      every 250 ms while any button is held
+//  phone → iPad  { "m": <mask>, "x": 0.5, "y": -1 }  the buttons held now, sent on every change and
+//                                                      every 250 ms while anything is held. The mask is
+//                                                      PhoneGameController.Input's bits (0-18); x and y
+//                                                      are the thumb stick (-1 to 1, up and right
+//                                                      positive), sent by pads that have one (N64)
 //  The token is random and kept on the iPad, so a link saved to a phone's Home Screen keeps
-//  working; "New Link" replaces it. Other devices on the same Wi-Fi can't join without it. If a phone goes quiet for 1 s while holding buttons, or
-//  its socket closes, all its buttons are released so nothing stays stuck.
+//  working; "New Link" replaces it. Other devices on the same Wi-Fi can't join without it. If a phone goes quiet for 1 s while holding buttons or the
+//  stick, or its socket closes, everything it holds is released so nothing stays stuck.
 //
 //  Threads: bytes are read and parsed on `queue`; everything else (state, sessions, the game
 //  controllers) lives on the main thread.
@@ -46,7 +49,11 @@ final class PhoneControllerServer: ObservableObject
     static let shared = PhoneControllerServer()
 
     static let port: NWEndpoint.Port = 8765
-    static let maximumPlayers = 2
+    /// Four, so every N64 player can use a phone; consoles with fewer ports ignore the extras.
+    static let maximumPlayers = 4
+    
+    /// Every button bit PhoneGameController knows (bits 0-18); higher bits are ignored.
+    static let buttonMaskBits: UInt32 = PhoneGameController.Input.buttons.reduce(0) { $0 | $1.bit }
 
     /// How long a phone may stay silent while holding buttons before they are released.
     static let quietTimeout: TimeInterval = 1.0
@@ -63,7 +70,7 @@ final class PhoneControllerServer: ObservableObject
     {
         var id: ObjectIdentifier
         
-        /// Which phone this is, 0 or 1 (at most `maximumPlayers` phones).
+        /// Which phone this is, 0 to 3 (at most `maximumPlayers` phones).
         var slot: Int
         
         /// The player this phone controls in the game, 0 for Player 1; nil if not assigned.
@@ -406,7 +413,9 @@ private extension PhoneControllerServer
         if method == "GET" && path == "/status"
         {
             let status = DispatchQueue.main.sync { () -> String in
-                let masks = self.sessions.values.compactMap { $0.controller }.map { "\($0.name)=\($0.buttonMask)" }.sorted().joined(separator: " ")
+                let masks = self.sessions.values.compactMap { $0.controller }
+                    .map { "\($0.name)=\($0.buttonMask) stick=\($0.leftThumbstick.x),\($0.leftThumbstick.y)" }
+                    .sorted().joined(separator: " ")
                 return "state=\(self.state) players=\(self.players.count) sessions=\(self.sessions.count) masks: \(masks)\n" + self.events.joined(separator: "\n")
             }
             self.respond(to: client, status: "200 OK", contentType: "text/plain; charset=utf-8", body: Data(status.utf8))
@@ -484,8 +493,12 @@ private extension PhoneControllerServer
         }
         else if let mask = message["m"] as? Int, let controller = client.controller
         {
-            // Bit 15 is reserved; ignore it and anything above 16 bits.
-            controller.update(buttonMask: UInt16(truncatingIfNeeded: mask) & 0x7FFF)
+            controller.update(buttonMask: UInt32(truncatingIfNeeded: mask) & PhoneControllerServer.buttonMaskBits)
+            
+            if let x = (message["x"] as? NSNumber)?.doubleValue, let y = (message["y"] as? NSNumber)?.doubleValue
+            {
+                controller.update(leftThumbstickX: x, y: y)
+            }
         }
     }
 
@@ -586,7 +599,7 @@ private extension PhoneControllerServer
 
         for client in self.sessions.values
         {
-            guard let controller = client.controller, controller.buttonMask != 0 else { continue }
+            guard let controller = client.controller, controller.isHoldingInput else { continue }
             guard now.timeIntervalSince(client.lastMessageDate) > PhoneControllerServer.quietTimeout else { continue }
 
             controller.releaseAllInputs()
@@ -739,6 +752,14 @@ private extension PhoneControllerServer
         }
 
         return nil
+    }
+}
+
+private extension PhoneGameController
+{
+    /// True while any button is held or the stick is off centre.
+    var isHoldingInput: Bool {
+        return self.buttonMask != 0 || self.leftThumbstick.x != 0 || self.leftThumbstick.y != 0
     }
 }
 

@@ -250,7 +250,7 @@ struct PhoneControllerView: View
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(width: 84, height: 28)
-                        .background(slot == 0 ? Color.blue : Color.red)
+                        .background(PhoneControllerView.playerColors[slot % PhoneControllerView.playerColors.count])
                         .clipShape(Capsule())
                     
                     if let player = self.server.players.first(where: { $0.slot == slot })
@@ -276,6 +276,9 @@ struct PhoneControllerView: View
         }
         .frame(maxWidth: 320)
     }
+    
+    /// Phone 1 to 4, in the same colours the phone page uses for its player badge.
+    static let playerColors: [Color] = [.blue, .red, .green, .yellow]
     
     static func qrImage(for string: String) -> UIImage?
     {
