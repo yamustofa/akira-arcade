@@ -8,6 +8,13 @@ Akira Arcade adds one thing to Delta: **phones on the same Wi-Fi become game con
 - **License:** AGPLv3, like Delta. If you share a build, share its source too.
 - **Games:** Akira Arcade ships no games. Load your own. For a quick, legal test, try MIT-licensed homebrew such as [Lunar Limit](https://github.com/retrobrews/nes-games).
 
+## Install
+
+- **AltStore or SideStore:** add this source: `https://raw.githubusercontent.com/yamustofa/akira-arcade/main/altstore/source.json`, or download `AkiraArcade.ipa` from [Releases](https://github.com/yamustofa/akira-arcade/releases). Apps installed with a free Apple ID need refreshing every 7 days.
+- **From source:** see "Build it with a free Apple ID" below.
+
+Release notes: [`docs/akira/releases/`](docs/akira/releases/). Privacy: [`PRIVACY.md`](PRIVACY.md). Maintainers make a release IPA with `Scripts/akira-build-ipa.sh`, which also updates `altstore/source.json`.
+
 ## Play with phones
 
 1. Start a game on the iPad, open the pause menu and tap **Phone Controller**.
