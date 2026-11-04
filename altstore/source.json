@@ -1,0 +1,42 @@
+{
+  "name": "Akira Arcade",
+  "subtitle": "Delta for iPad, with phones as game controllers.",
+  "description": "Akira Arcade is a community fork of Delta by Riley Testut, made for Akira, a retro-computer dock for the iPad. Phones on the same Wi-Fi scan a QR code and their browser becomes a gamepad.",
+  "iconURL": "https://raw.githubusercontent.com/yamustofa/akira-arcade/main/docs/akira/icon.png",
+  "website": "https://github.com/yamustofa/akira-arcade",
+  "tintColor": "#FF5B1F",
+  "apps": [
+    {
+      "name": "Akira Arcade",
+      "bundleIdentifier": "com.yamustofa.akiraarcade",
+      "developerName": "Akira · fork of Delta by Riley Testut",
+      "subtitle": "Your phone is the controller.",
+      "localizedDescription": "Play classic games on your iPad with up to 4 phones as controllers. Open Phone Controller from the pause menu, scan the QR code with a phone on the same Wi-Fi, and the phone's browser becomes a gamepad styled after the console being played: NES, SNES, Game Boy / Color / Advance, DS, Mega Drive and N64 (with a thumb stick).\n\nBuilt on Delta 2.0 by Riley Testut (AGPLv3). Source: https://github.com/yamustofa/akira-arcade\n\nAkira Arcade ships no games or BIOS files.",
+      "iconURL": "https://raw.githubusercontent.com/yamustofa/akira-arcade/main/docs/akira/icon.png",
+      "tintColor": "#FF5B1F",
+      "category": "games",
+      "screenshotURLs": [],
+      "versions": [
+        {
+          "version": "2.0",
+          "buildVersion": "177",
+          "date": "2026-11-04",
+          "localizedDescription": "Akira Arcade 0.1.0: phones as game controllers, console-styled pads, N64 thumb stick, up to 4 phones, Join Wi-Fi QR. Notes: https://github.com/yamustofa/akira-arcade/blob/main/docs/akira/releases/v0.1.0.md",
+          "downloadURL": "https://github.com/yamustofa/akira-arcade/releases/download/v0.1.0/AkiraArcade.ipa",
+          "size": 0,
+          "minOSVersion": "17.4"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Delta uses the local network to communicate with AltServer, enable JIT, connect to Epilogue Operator devices, and let phones on the same Wi-Fi act as game controllers.",
+          "NSMicrophoneUsageDescription": "Delta uses your microphone to emulate the Nintendo DS microphone.",
+          "NSPhotoLibraryAddUsageDescription": "Please allow Delta to save screenshots to your Photo Library.",
+          "NSPhotoLibraryUsageDescription": "Press “OK” to allow Delta to use images from your Photo Library as game artwork."
+        }
+      }
+    }
+  ],
+  "news": []
+}

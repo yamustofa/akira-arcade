@@ -1,92 +1,19 @@
 {
-  "features" : [
-    "refractivity"
-  ],
   "fill" : {
     "linear-gradient" : [
-      "display-p3:0.54510,0.15686,0.96863,1.00000",
-      "srgb:0.26667,0.00000,0.63137,1.00000"
+      "srgb:0.16471,0.16471,0.18039,1.00000",
+      "srgb:0.04314,0.04314,0.04706,1.00000"
     ]
   },
   "groups" : [
     {
-      "blur-material" : 0.5,
-      "hidden" : true,
       "layers" : [
         {
           "glass" : true,
-          "hidden" : false,
-          "image-name" : "Delta_icon.svg",
-          "name" : "Delta_icon",
+          "image-name" : "akira_box.svg",
+          "name" : "akira_box",
           "position" : {
-            "scale" : 0.88,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
-        }
-      ],
-      "name" : "Icon",
-      "refractivity" : {
-        "depth" : 1,
-        "enabled" : true,
-        "strength" : -0.4
-      },
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 1.6
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.4
-      }
-    },
-    {
-      "blur-material" : null,
-      "hidden" : true,
-      "layers" : [
-        {
-          "glass" : true,
-          "image-name" : "delta_shadow.svg",
-          "name" : "delta_shadow",
-          "position" : {
-            "scale" : 0.88,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
-        }
-      ],
-      "lighting" : "individual",
-      "name" : "Shadow",
-      "refractivity" : {
-        "depth" : 1,
-        "enabled" : false,
-        "strength" : -0.7359375
-      },
-      "shadow" : {
-        "kind" : "none",
-        "opacity" : 1.6
-      },
-      "specular" : true,
-      "translucency" : {
-        "enabled" : false,
-        "value" : 0.4
-      }
-    },
-    {
-      "blur-material" : 0.5,
-      "hidden" : false,
-      "layers" : [
-        {
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "Delta_icon.svg",
-          "name" : "Delta_icon",
-          "position" : {
-            "scale" : 0.88,
+            "scale" : 0.9,
             "translation-in-points" : [
               0,
               0
@@ -95,10 +22,10 @@
         },
         {
           "glass" : false,
-          "image-name" : "delta_shadow.svg",
-          "name" : "delta_shadow",
+          "image-name" : "akira_pad.svg",
+          "name" : "akira_pad",
           "position" : {
-            "scale" : 0.88,
+            "scale" : 0.9,
             "translation-in-points" : [
               0,
               0
@@ -106,21 +33,15 @@
           }
         }
       ],
-      "lighting" : "individual",
-      "name" : "Combined",
-      "refractivity" : {
-        "depth" : 1,
-        "enabled" : true,
-        "strength" : -0.7359375
-      },
+      "name" : "Akira",
       "shadow" : {
         "kind" : "neutral",
-        "opacity" : 1.6
+        "opacity" : 0.5
       },
       "specular" : true,
       "translucency" : {
-        "enabled" : true,
-        "value" : 0.4
+        "enabled" : false,
+        "value" : 0.5
       }
     }
   ],
