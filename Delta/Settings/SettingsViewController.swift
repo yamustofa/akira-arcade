@@ -91,6 +91,7 @@ private extension SettingsViewController
     
     enum CreditsRow: Int, CaseIterable
     {
+        case aboutAkira
         case contributors
         case softwareLicenses
     }
@@ -485,6 +486,13 @@ private extension SettingsViewController
         self.navigationController?.pushViewController(hostingController, animated: true)
     }
     
+    /// Akira Arcade: credits, source code and license for this fork.
+    func showAboutAkira()
+    {
+        let hostingController = AboutAkiraView.makeViewController()
+        self.navigationController?.pushViewController(hostingController, animated: true)
+    }
+    
     func showExperimentalFeatures()
     {
         let hostingController = ExperimentalFeaturesView.makeViewController()
@@ -768,6 +776,7 @@ extension SettingsViewController
             let row = CreditsRow(rawValue: indexPath.row)!
             switch row
             {
+            case .aboutAkira: self.showAboutAkira()
             case .contributors: self.showContributors()
             case .softwareLicenses: break
             }
@@ -777,34 +786,13 @@ extension SettingsViewController
             switch row
             {
             case .contactUs:
-                if MFMailComposeViewController.canSendMail()
-                {
-                    let mailViewController = MFMailComposeViewController()
-                    mailViewController.mailComposeDelegate = self
-                    mailViewController.setToRecipients(["support@altstore.io"])
-                    
-                    if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-                    {
-                        mailViewController.setSubject("Delta \(version) Feedback")
-                    }
-                    else
-                    {
-                        mailViewController.setSubject("Delta Feedback")
-                    }
-                    
-                    self.present(mailViewController, animated: true, completion: nil)
-                }
-                else
-                {
-                    let toastView = RSTToastView(text: NSLocalizedString("Cannot Send Mail", comment: ""), detailText: nil)
-                    toastView.show(in: self.navigationController?.view ?? self.view, duration: 4.0)
-                }
+                // Akira Arcade: problems with this fork go to its own issue tracker, not to Delta's support.
+                UIApplication.shared.open(AboutAkiraView.issuesURL, options: [:])
                 
             case .alternatePaymentMethods: self.showSubscriptions()
                 
             case .privacyPolicy:
-                let safariURL = URL(string: "https://altstore.io/privacy")!
-                UIApplication.shared.open(safariURL, options: [:])
+                UIApplication.shared.open(AboutAkiraView.privacyURL, options: [:])
                 
             case .termsOfUse:
                 let safariURL = URL(string: "https://altstore.io/terms")!
@@ -851,6 +839,10 @@ extension SettingsViewController
                 {
                     fallthrough
                 }
+                
+            case .termsOfUse:
+                // Akira Arcade: Delta's terms cover Delta's own services, so the fork doesn't show them.
+                return 0.0
                 
             default: break
             }

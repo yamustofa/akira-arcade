@@ -166,6 +166,7 @@
 		BFAA1FED1B8AA4FA00495943 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAA1FEC1B8AA4FA00495943 /* Settings.swift */; };
 		BFAB9F7D219A43380080EC7D /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAB9F7C219A43380080EC7D /* SyncManager.swift */; };
 		BFAB9F88219A4B670080EC7D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BFAB9F87219A4B670080EC7D /* GoogleService-Info.plist */; };
+		A4C1A0000000000000000002 /* AboutAkiraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C1A0000000000000000001 /* AboutAkiraView.swift */; };
 		BFB3645823245A6000CD0EB1 /* LicensesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB3645723245A6000CD0EB1 /* LicensesViewController.swift */; };
 		BFBAB2E31EB685A2004E0B0E /* DeltaCoreProtocol+Delta.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFBAB2E21EB685A2004E0B0E /* DeltaCoreProtocol+Delta.swift */; };
 		BFC1F2CC22F9515F00606A45 /* CopyDeepLinkActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC1F2CB22F9515F00606A45 /* CopyDeepLinkActivity.swift */; };
@@ -774,6 +775,7 @@
 		BFAA1FEC1B8AA4FA00495943 /* Settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		BFAB9F7C219A43380080EC7D /* SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
 		BFAB9F87219A4B670080EC7D /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		A4C1A0000000000000000001 /* AboutAkiraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutAkiraView.swift; sourceTree = "<group>"; };
 		BFB3645723245A6000CD0EB1 /* LicensesViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LicensesViewController.swift; sourceTree = "<group>"; };
 		BFBAB2E21EB685A2004E0B0E /* DeltaCoreProtocol+Delta.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "DeltaCoreProtocol+Delta.swift"; sourceTree = "<group>"; };
 		BFC1F2CB22F9515F00606A45 /* CopyDeepLinkActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyDeepLinkActivity.swift; sourceTree = "<group>"; };
@@ -1468,6 +1470,7 @@
 				8282422F2F7C487800D8F899 /* SettingsRow.swift */,
 				828242252F7C40C300D8F899 /* SettingsView.swift */,
 				822CFC22301279430031C3F8 /* AudioObserver.swift */,
+				A4C1A0000000000000000001 /* AboutAkiraView.swift */,
 				BFB3645723245A6000CD0EB1 /* LicensesViewController.swift */,
 				BFE9907E24451DE6006409A7 /* Cores */,
 				BF71CF851FE8FFF1001F1613 /* App Icon */,
@@ -2597,6 +2600,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BFB3645823245A6000CD0EB1 /* LicensesViewController.swift in Sources */,
+				A4C1A0000000000000000002 /* AboutAkiraView.swift in Sources */,
 				BFC6F7B81F435BC500221B96 /* Input+Display.swift in Sources */,
 				D5AE76C82C2B808F0086471B /* AltAppIconsViewController.swift in Sources */,
 				BF59426A1E09BBD00051894B /* GridCollectionViewCell.swift in Sources */,
